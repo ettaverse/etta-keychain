@@ -145,18 +145,18 @@ export class AccountService {
 
 ### 🎨 UI Task 2.1: Account Management Interface
 **Location:** `entrypoints/popup/`
-**Status:** NOT STARTED
+**Status:** COMPLETED ✅
 
 **Subtasks:**
-- [ ] Create React components using shadcn/ui patterns
-- [ ] Keychain password setup screen with confirmation
-- [ ] Account import form with validation feedback
-- [ ] Multiple account list display component
-- [ ] Account switching dropdown/selector
-- [ ] Account deletion confirmation dialog
-- [ ] Private key input handling with security
-- [ ] Active account indicator
-- [ ] Account organization/labeling UI
+- [x] Create React components using shadcn/ui patterns
+- [x] Keychain password setup screen with confirmation
+- [x] Account import form with validation feedback
+- [x] Multiple account list display component
+- [x] Account switching dropdown/selector
+- [x] Account deletion confirmation dialog
+- [x] Private key input handling with security
+- [x] Active account indicator
+- [x] Account organization/labeling UI
 
 ### 🎨 UI Task 2.2: Key Import & Master Password Interface
 **Location:** `entrypoints/popup/`
