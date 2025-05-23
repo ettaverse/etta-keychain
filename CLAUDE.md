@@ -78,3 +78,7 @@ The project is in early development with:
 - No testing framework configured yet
 - No linting tools configured yet
 - Minimal functionality implemented
+
+## Important Reminders
+
+- Do not use 🤖 Generated with [Claude Code] or Co-Authored-By: Claude
