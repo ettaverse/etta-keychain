@@ -81,36 +81,63 @@ export class TransactionService {
 }
 ```
 
-### 🔧 Core Task 2.4: Authentication & Keychain Password Security System
-**Location:** `entrypoints/background/`
-**Status:** NOT STARTED
+### ✅ Core Task 2.4: Authentication & Keychain Password Security System
+**Location:** `entrypoints/background/services/`
+**Status:** COMPLETED ✅
 **Priority:** HIGH
 
 **Subtasks:**
-- [ ] Keychain password setup with confirmation
-- [ ] Password strength validation
-- [ ] Extension-wide password protection
-- [ ] Auto-lock functionality
-- [ ] Session management
-- [ ] Unlock/lock state tracking
-- [ ] Security timeout implementation
-- [ ] Password change functionality
-- [ ] Failed attempt tracking
+- [x] Implement AuthService with password setup functionality
+- [x] Password strength validation
+- [x] Extension-wide password protection
+- [x] Auto-lock functionality
+- [x] Session management with secure storage
+- [x] Unlock/lock state tracking
+- [x] Security timeout implementation
+- [x] Password change functionality
+- [x] Failed attempt tracking and lockout
+- [x] Integration with existing services
 
 **Implementation Plan:**
 
 ```typescript
-// entrypoints/background/lib/auth.ts
-export class AuthManager {
-  async setupKeychainPassword(password: string, confirmPassword: string): Promise<void> { }
-  async validateKeychainPassword(password: string): Promise<boolean> { }
-  async changeKeychainPassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<boolean> { }
-  lockKeychain(): void { }
-  async unlockKeychain(password: string): Promise<boolean> { }
-  isLocked(): boolean { }
-  setupAutoLock(minutes: number): void { }
-  trackFailedAttempt(): void { }
-  getFailedAttempts(): number { }
+// entrypoints/background/services/auth.service.ts
+export class AuthService {
+  constructor(
+    private crypto: CryptoManager
+  ) {}
+
+  // Password Management
+  async setupKeychainPassword(password: string, confirmPassword: string): Promise<void>
+  async validateKeychainPassword(password: string): Promise<boolean>
+  async changeKeychainPassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<boolean>
+  getPasswordStrength(password: string): PasswordStrength
+  
+  // Session Management
+  async unlockKeychain(password: string): Promise<boolean>
+  lockKeychain(): void
+  isLocked(): boolean
+  getSessionKey(): string | null
+  
+  // Security Features
+  setupAutoLock(minutes: number): void
+  clearAutoLock(): void
+  trackFailedAttempt(): void
+  getFailedAttempts(): number
+  isLockedOut(): boolean
+  resetFailedAttempts(): void
+}
+
+// Update AccountService to use AuthService
+export class AccountService {
+  constructor(
+    private storage: SecureStorage,
+    private steemApi: SteemApiService,
+    private keyManager: KeyManagementService,
+    private auth: AuthService  // Add AuthService dependency
+  ) {}
+  
+  // All methods will check auth.isLocked() before proceeding
 }
 ```
 

@@ -4,4 +4,5 @@ export enum LocalStorageKeyEnum {
   __MK = '__mk',
   SETTINGS = 'settings',
   RPC = 'rpc',
+  AUTH_DATA = 'auth_data',
 }
