@@ -12,10 +12,14 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare",
+    "postinstall": "wxt prepare && simple-git-hooks",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "pre-push": "pnpm compile && pnpm test:run && pnpm build"
+  },
+  "simple-git-hooks": {
+    "pre-push": "pnpm pre-push"
   },
   "dependencies": {
     "@noble/ciphers": "^1.3.0",
@@ -41,6 +45,7 @@
     "@wxt-dev/module-react": "^1.1.3",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
+    "simple-git-hooks": "^2.13.0",
     "tailwindcss": "^4.1.7",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3",
