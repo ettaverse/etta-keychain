@@ -34,7 +34,7 @@ describe('AccountService', () => {
       key_auths: [['STM5RqVBAVNp5ufMCetQtvLGLJo7unX9nyCBMMrTXRWQ9i1Zzzizh', 1]],
     },
     memo_key: 'STM7UcdvEcyLz5NDhrUqajzEdX4CwVjGdcYQM6FUXbgLR8P2L6zR3',
-  };
+  } as any;
 
   const mockKeys = {
     posting: '5JpostingKey',
@@ -253,8 +253,22 @@ describe('AccountService', () => {
   describe('getActiveAccount', () => {
     it('should return active account with blockchain data', async () => {
       const keychainPassword = 'keychainPass123';
-      const localAccount = { name: 'testuser', keys: mockKeys };
-      const rc = { account: 'testuser', rc_manabar: { current_mana: '1000000' } };
+      const localAccount = { 
+        name: 'testuser', 
+        keys: mockKeys,
+        metadata: {
+          importMethod: 'master_password' as const,
+          importedAt: Date.now()
+        }
+      };
+      const rc = { 
+        rc_manabar: { 
+          current_mana: '1000000',
+          last_update_time: Date.now()
+        },
+        max_rc: '2000000',
+        percentage: 50
+      };
 
       vi.mocked(mockStorage.getActiveAccount).mockResolvedValue('testuser');
       vi.mocked(mockStorage.getAccount).mockResolvedValue(localAccount);
@@ -286,7 +300,14 @@ describe('AccountService', () => {
     });
 
     it('should return null if blockchain data fetch fails', async () => {
-      const localAccount = { name: 'testuser', keys: mockKeys };
+      const localAccount = { 
+        name: 'testuser', 
+        keys: mockKeys,
+        metadata: {
+          importMethod: 'master_password' as const,
+          importedAt: Date.now()
+        }
+      };
 
       vi.mocked(mockStorage.getActiveAccount).mockResolvedValue('testuser');
       vi.mocked(mockStorage.getAccount).mockResolvedValue(localAccount);
@@ -422,7 +443,14 @@ describe('AccountService', () => {
 
   describe('simple proxy methods', () => {
     it('should get account', async () => {
-      const mockAccount = { name: 'testuser', keys: mockKeys };
+      const mockAccount = { 
+        name: 'testuser', 
+        keys: mockKeys,
+        metadata: {
+          importMethod: 'master_password' as const,
+          importedAt: Date.now()
+        }
+      };
       vi.mocked(mockStorage.getAccount).mockResolvedValue(mockAccount);
 
       const result = await service.getAccount('testuser', 'keychainPass');
@@ -431,7 +459,7 @@ describe('AccountService', () => {
     });
 
     it('should get all accounts', async () => {
-      const mockAccounts = [{ name: 'user1' }, { name: 'user2' }];
+      const mockAccounts = [{ name: 'user1', keys: {} }, { name: 'user2', keys: {} }];
       vi.mocked(mockStorage.getAllAccounts).mockResolvedValue(mockAccounts);
 
       const result = await service.getAllAccounts('keychainPass');
@@ -454,7 +482,7 @@ describe('AccountService', () => {
     });
 
     it('should check if account exists', async () => {
-      const mockAccounts = [{ name: 'user1' }, { name: 'user2' }];
+      const mockAccounts = [{ name: 'user1', keys: {} }, { name: 'user2', keys: {} }];
       vi.mocked(mockStorage.getAllAccounts).mockResolvedValue(mockAccounts);
 
       const exists = await service.accountExists('user1', 'keychainPass');
@@ -466,13 +494,13 @@ describe('AccountService', () => {
 
     it('should get account metadata', async () => {
       const mockAccounts = [
-        { name: 'user1', metadata: { label: 'Main Account' } },
-        { name: 'user2', metadata: { label: 'Secondary' } },
+        { name: 'user1', keys: {}, metadata: { importMethod: 'master_password' as const, importedAt: Date.now() } },
+        { name: 'user2', keys: {}, metadata: { importMethod: 'individual_keys' as const, importedAt: Date.now() } },
       ];
       vi.mocked(mockStorage.getAllAccountsWithMetadata).mockResolvedValue(mockAccounts);
 
       const metadata = await service.getAccountMetadata('user1', 'keychainPass');
-      expect(metadata).toEqual({ label: 'Main Account' });
+      expect(metadata).toEqual({ importMethod: 'master_password', importedAt: expect.any(Number) });
 
       const noMetadata = await service.getAccountMetadata('user3', 'keychainPass');
       expect(noMetadata).toBeNull();

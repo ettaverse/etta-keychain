@@ -23,10 +23,16 @@ describe('TransactionService', () => {
   let mockSteemApi: SteemApiService;
   let mockKeyManager: KeyManagementService;
 
+  // Helper to get operations from mock
+  const getMockOperations = () => {
+    const mockResult = vi.mocked(SteemTransaction).mock.results[0]?.value as { operations?: any[] };
+    const mockCall = vi.mocked(SteemTransaction).mock.calls[0]?.[0] as { operations?: any[] };
+    return mockResult?.operations || mockCall?.operations || [];
+  };
+
   const mockKey: Key = {
     type: 'active',
     value: '5JTestPrivateKey',
-    pubkey: 'STMTestPublicKey',
   };
 
   const mockRefBlockData = {
@@ -60,11 +66,13 @@ describe('TransactionService', () => {
 
     const mockTx = {
       sign: vi.fn(),
-      operations: [],
+      operations: [] as any[],
       extensions: [],
     };
     vi.mocked(SteemTransaction).mockImplementation((params) => {
-      mockTx.operations = params.operations;
+      if (params && typeof params === 'object' && 'operations' in params) {
+        mockTx.operations = (params as any).operations;
+      }
       return mockTx as any;
     });
   });
@@ -198,8 +206,7 @@ describe('TransactionService', () => {
       expect(result?.success).toBe(true);
       expect(mockSteemApi.broadcastTransaction).toHaveBeenCalled();
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'custom_json',
         {
@@ -221,8 +228,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'custom_json',
         {
@@ -241,8 +247,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'transfer',
         {
@@ -259,8 +264,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'transfer',
         {
@@ -279,8 +283,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'vote',
         {
@@ -297,8 +300,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0][1].weight).toBe(-10000);
     });
   });
@@ -309,8 +311,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'delegate_vesting_shares',
         {
@@ -328,8 +329,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'transfer_to_vesting',
         {
@@ -347,8 +347,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'withdraw_vesting',
         {
@@ -379,8 +378,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'account_create',
         {
@@ -415,8 +413,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'account_update',
         {
@@ -442,8 +439,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'account_update',
         {
@@ -464,8 +460,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'account_witness_vote',
         {
@@ -481,8 +476,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0][1].approve).toBe(false);
     });
   });
@@ -493,8 +487,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0]).toEqual([
         'account_witness_proxy',
         {
@@ -509,8 +502,7 @@ describe('TransactionService', () => {
 
       expect(result?.success).toBe(true);
       
-      const txMock = vi.mocked(SteemTransaction).mock.results[0].value;
-      const operations = (txMock as any).operations || vi.mocked(SteemTransaction).mock.calls[0][0].operations;
+      const operations = getMockOperations();
       expect(operations[0][1].proxy).toBe('');
     });
   });

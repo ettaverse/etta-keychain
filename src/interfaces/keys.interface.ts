@@ -2,9 +2,11 @@ export interface Keys {
   active?: string;
   posting?: string;
   memo?: string;
+  owner?: string;
   activePubkey?: string;
   postingPubkey?: string;
   memoPubkey?: string;
+  ownerPubkey?: string;
 }
 
 export interface Key {

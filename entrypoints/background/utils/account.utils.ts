@@ -298,15 +298,15 @@ const deleteKey = (
 
   if (KeysUtils.keysCount(account?.keys!) > 2) {
     switch (keyType) {
-      case KeyType.ACTIVE:
+      case 'active':
         delete account?.keys.active;
         delete account?.keys.activePubkey;
         break;
-      case KeyType.POSTING:
+      case 'posting':
         delete account?.keys.posting;
         delete account?.keys.postingPubkey;
         break;
-      case KeyType.MEMO:
+      case 'memo':
         delete account?.keys.memo;
         delete account?.keys.memoPubkey;
         break;
@@ -438,7 +438,7 @@ const claimAccounts = async (
           },
         ] as ClaimAccountOperation,
       ],
-      activeAccount.keys.active!,
+      { type: 'active', value: activeAccount.keys.active! } as Key,
       false,
       options,
     );

@@ -99,7 +99,7 @@ const createSignAndBroadcastTransaction = async (
   );
 
   const localAccount = localAccounts.find(
-    (account) => account.keys.posting === key || account.keys.active === key,
+    (account) => account.keys.posting === key.value || account.keys.active === key.value,
   );
 
   const initiatorAccount = await AccountUtils.getExtendedAccount(
@@ -195,11 +195,15 @@ const broadcastAndConfirmTransactionWithSignature = async (
         response as SteemTxBroadcastSuccessResponse
       ).result;
       return {
-        id: transactionResult.tx_id,
-        tx_id: transactionResult.tx_id,
-        confirmed: confirmation
-          ? await confirmTransaction(transactionResult.tx_id)
-          : false,
+        success: true,
+        result: {
+          id: transactionResult.tx_id,
+          tx_id: transactionResult.tx_id,
+          confirmed: confirmation
+            ? await confirmTransaction(transactionResult.tx_id)
+            : false,
+        },
+        transaction: hiveTransaction
       } as TransactionResult;
     }
   } catch (err) {

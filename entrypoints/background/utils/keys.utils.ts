@@ -175,7 +175,7 @@ const getKeyType = (
     return 'MULTISIG' as any;
   } else if (publicKey && typeof publicKey === 'object' && publicKey.value?.startsWith('@')) {
     return 'AUTHORIZED_ACCOUNT' as any;
-  } else if (publicKey && typeof publicKey === 'string' && publicKey.startsWith('@')) {
+  } else if (publicKey && typeof publicKey === 'string' && (publicKey as string).startsWith('@')) {
     return 'AUTHORIZED_ACCOUNT' as any;
   } else {
     return 'PRIVATE_KEY' as any;

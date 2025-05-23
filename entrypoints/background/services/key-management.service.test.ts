@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { KeyManagementService } from './key-management.service';
 import { PrivateKeyType } from '../../../src/interfaces/keys.interface';
 import { Authority, ExtendedAccount } from '@steempro/dsteem';
@@ -89,7 +89,7 @@ describe('KeyManagementService', () => {
 
       // Mock PrivateKey.fromLogin to return predictable keys
       const { PrivateKey } = require('@steempro/steem-tx-js');
-      vi.spyOn(PrivateKey, 'fromLogin').mockImplementation((username, password, role) => {
+      (vi as any).spyOn(PrivateKey, 'fromLogin').mockImplementation((username: any, password: any, role: any) => {
         const mockPrivateKey = {
           toString: () => `5J${role}Key`,
           createPublic: () => ({
