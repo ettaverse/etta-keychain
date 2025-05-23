@@ -15,6 +15,7 @@
 - [x] Implement SteemApiService for blockchain operations
 - [x] Implement KeyManagementService for key operations
 - [x] Implement AccountService for account orchestration
+- [x] Implement TransactionService for blockchain transactions
 - [x] Create dependency injection container
 - [x] Migrate existing AccountUtils methods to services
 - [x] Write unit tests for each service
@@ -57,6 +58,26 @@ export class AccountService {
   async verifyAccount(username: string, password: string): Promise<Keys>
   async addKeyToAccount(username: string, privateKey: string, keyType: KeyType, keychainPassword: string): Promise<void>
   async removeKeyFromAccount(username: string, keyType: KeyType, keychainPassword: string): Promise<void>
+}
+
+// entrypoints/background/services/transaction.service.ts
+export class TransactionService {
+  constructor(
+    private steemApi: SteemApiService,
+    private keyManager: KeyManagementService
+  ) {}
+
+  async sendOperation(operations: Operation[], key: Key, confirmation?: boolean, options?: TransactionOptions): Promise<TransactionResult | null>
+  async broadcastCustomJson(id: string, json: any, account: string, key: Key, displayName?: string): Promise<TransactionResult | null>
+  async transfer(from: string, to: string, amount: string, memo: string, key: Key, currency?: string): Promise<TransactionResult | null>
+  async vote(voter: string, author: string, permlink: string, weight: number, key: Key): Promise<TransactionResult | null>
+  async delegateVestingShares(delegator: string, delegatee: string, vestingShares: string, key: Key): Promise<TransactionResult | null>
+  async transferToVesting(from: string, to: string, amount: string, key: Key): Promise<TransactionResult | null>
+  async withdrawVesting(account: string, vestingShares: string, key: Key): Promise<TransactionResult | null>
+  async createAccount(...): Promise<TransactionResult | null>
+  async updateAccount(...): Promise<TransactionResult | null>
+  async witnessVote(account: string, witness: string, approve: boolean, key: Key): Promise<TransactionResult | null>
+  async setWitnessProxy(account: string, proxy: string, key: Key): Promise<TransactionResult | null>
 }
 ```
 
@@ -158,7 +179,7 @@ export class AuthManager {
 ### Service Layer Benefits
 The service layer architecture (Task 2.3) has provided:
 1. **Separation of Concerns:** Business logic separated from utilities
-2. **Testability:** Comprehensive unit tests with 58 test cases passing
+2. **Testability:** Comprehensive unit tests with 81 test cases passing
 3. **Maintainability:** Clear boundaries between layers
 4. **Scalability:** Easy to add new services
 
@@ -166,6 +187,7 @@ The service layer architecture (Task 2.3) has provided:
 - SteemApiService: 11 tests covering all blockchain operations
 - KeyManagementService: 17 tests covering key derivation and validation
 - AccountService: 30 tests covering account import, management, and authentication
+- TransactionService: 23 tests covering all transaction operations
 
 ### Authentication Flow
 The authentication system (Task 2.4) will implement:
