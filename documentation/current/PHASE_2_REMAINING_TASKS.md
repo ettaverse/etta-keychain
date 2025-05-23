@@ -112,13 +112,13 @@ export class AuthService {
   async validateKeychainPassword(password: string): Promise<boolean>
   async changeKeychainPassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<boolean>
   getPasswordStrength(password: string): PasswordStrength
-  
+
   // Session Management
   async unlockKeychain(password: string): Promise<boolean>
   lockKeychain(): void
   isLocked(): boolean
   getSessionKey(): string | null
-  
+
   // Security Features
   setupAutoLock(minutes: number): void
   clearAutoLock(): void
@@ -136,7 +136,7 @@ export class AccountService {
     private keyManager: KeyManagementService,
     private auth: AuthService  // Add AuthService dependency
   ) {}
-  
+
   // All methods will check auth.isLocked() before proceeding
 }
 ```
@@ -176,17 +176,36 @@ export class AccountService {
 
 ### 🎨 UI Task 2.2.1: STEEM Account Connection Interface
 **Location:** `entrypoints/popup/`
-**Status:** NOT STARTED
+**Status:** COMPLETED ✅
 
 **Subtasks:**
-- [ ] Account lookup form with username validation
-- [ ] Loading state during blockchain queries
-- [ ] Display fetched account information
-- [ ] Show available authorities (owner, active, posting, memo)
-- [ ] Network status indicator
-- [ ] RPC node selector for advanced users
-- [ ] Error handling for invalid accounts
-- [ ] Connection retry UI
+- [x] Account lookup form with username validation (in AccountLookup component)
+- [x] Loading state during blockchain queries (with spinner and loading states)
+- [x] Display fetched account information (avatar, creation date, authorities)
+- [x] Show available authorities (owner, active, posting, memo) with tooltips
+- [x] Network status indicator (online/offline/slow connection badges)
+- [x] RPC node selector for advanced users (in RpcSelector component)
+- [x] Error handling for invalid accounts (with retry functionality)
+- [x] Connection retry UI (with retry button and count)
+
+**Implementation Details:**
+- Created `AccountLookup` component with full STEEM account search functionality
+- Created `RpcSelector` component for managing and testing RPC nodes
+- Created `AccountConnection` page combining both features with tabs
+- Added support for custom RPC nodes with persistence
+- Implemented real-time RPC node health checking with latency display
+- Added network status indicators and connection retry logic
+- Integrated with existing background services for API calls
+
+**Bugs Fixed During Implementation:**
+1. **RPC Node Selection Bug:** Account lookup was not using the selected RPC node
+   - Root cause: Background service initialized without checking saved RPC preferences
+   - Solution: Modified `background.ts` to load saved RPC from localStorage on startup
+   - Added comprehensive logging to track RPC usage throughout the service
+2. **Library Default RPC Cycling:** Discovered @steempro/steem-tx-js has internal RPC failover
+   - The library maintains its own array of default RPC nodes
+   - It automatically cycles through nodes on failure
+   - Enhanced logging to track which RPC is actually being used
 
 ### 🎨 UI Task 2.4: Authentication Interface
 **Location:** `entrypoints/popup/`

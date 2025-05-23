@@ -8,14 +8,18 @@ import LocalStorageUtils from '../src/utils/localStorage.utils';
 import { LocalStorageKeyEnum } from '../src/reference-data/local-storage-key.enum';
 import Logger from '../src/utils/logger.utils';
 
-export default defineBackground(() => {
+export default defineBackground(async () => {
   console.log('Etta Keychain background script started', { id: browser.runtime.id });
 
   // Initialize services
   const crypto = new CryptoManager();
   const authService = new AuthService(crypto);
   const storage = new SecureStorage();
-  const steemApi = new SteemApiService();
+  
+  // Initialize SteemApiService with saved RPC preference
+  const savedRpc = await LocalStorageUtils.getValueFromLocalStorage('currentRpc');
+  const steemApi = new SteemApiService(savedRpc || undefined);
+  
   const keyManager = new KeyManagementService();
   const accountService = new AccountService(storage, steemApi, keyManager);
 
@@ -196,6 +200,55 @@ export default defineBackground(() => {
             );
           }
           
+          sendResponse({ success: true });
+          return;
+        }
+
+        case 'getAccount': {
+          try {
+            const accounts = await steemApi.getAccount(message.payload.username);
+            sendResponse({ success: true, data: accounts });
+          } catch (error: any) {
+            sendResponse({ success: false, error: error.message });
+          }
+          return;
+        }
+
+        case 'getRpcSettings': {
+          const currentRpc = steemApi.getRpc();
+          const customRpcs = await LocalStorageUtils.getValueFromLocalStorage('customRpcs') || [];
+          sendResponse({ 
+            success: true, 
+            data: { currentRpc, customRpcs } 
+          });
+          return;
+        }
+
+        case 'setRpc': {
+          try {
+            await steemApi.switchRpc(message.payload.rpc);
+            await LocalStorageUtils.saveValueInLocalStorage('currentRpc', message.payload.rpc);
+            sendResponse({ success: true });
+          } catch (error: any) {
+            sendResponse({ success: false, error: error.message });
+          }
+          return;
+        }
+
+        case 'testRpc': {
+          try {
+            const testApi = new SteemApiService({ uri: message.payload.uri });
+            // Test connection by getting dynamic global properties
+            await testApi.getDynamicGlobalProperties();
+            sendResponse({ success: true });
+          } catch (error: any) {
+            sendResponse({ success: false, error: error.message });
+          }
+          return;
+        }
+
+        case 'saveCustomRpcs': {
+          await LocalStorageUtils.saveValueInLocalStorage('customRpcs', message.payload.customRpcs);
           sendResponse({ success: true });
           return;
         }

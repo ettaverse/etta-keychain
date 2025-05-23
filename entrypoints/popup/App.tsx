@@ -3,9 +3,10 @@ import { PasswordSetup } from './components/PasswordSetup';
 import { UnlockScreen } from './components/UnlockScreen';
 import { AccountList } from './components/AccountList';
 import { AccountImportForm } from './components/AccountImportForm';
+import { AccountConnection } from './pages/AccountConnection';
 import { Button } from '@/components/ui/button';
 
-type AppState = 'loading' | 'setup' | 'locked' | 'unlocked' | 'import';
+type AppState = 'loading' | 'setup' | 'locked' | 'unlocked' | 'import' | 'connection';
 
 function App() {
   const [state, setState] = useState<AppState>('loading');
@@ -50,7 +51,7 @@ function App() {
   };
 
   const handleImportClick = () => {
-    setState('import');
+    setState('connection');
   };
 
   const handleImportSuccess = () => {
@@ -59,6 +60,11 @@ function App() {
 
   const handleBackFromImport = () => {
     setState('unlocked');
+  };
+
+  const handleImportFromConnection = (username: string) => {
+    setState('import');
+    // We'll pass the username to the import form later
   };
 
   if (state === 'loading') {
@@ -81,12 +87,23 @@ function App() {
     return <UnlockScreen onUnlock={handleUnlock} />;
   }
 
+  if (state === 'connection') {
+    return (
+      <div className="min-h-[400px] w-[350px]">
+        <AccountConnection 
+          onBack={handleBackFromImport}
+          onImportAccount={handleImportFromConnection}
+        />
+      </div>
+    );
+  }
+
   if (state === 'import') {
     return (
       <div className="min-h-[400px] w-[350px] p-6">
         <div className="mb-4">
-          <Button variant="ghost" size="sm" onClick={handleBackFromImport}>
-            ← Back to Accounts
+          <Button variant="ghost" size="sm" onClick={() => setState('connection')}>
+            ← Back to Account Lookup
           </Button>
         </div>
         <AccountImportForm onImportSuccess={handleImportSuccess} />

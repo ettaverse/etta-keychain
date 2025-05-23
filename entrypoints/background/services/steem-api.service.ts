@@ -10,6 +10,11 @@ export class SteemApiService {
 
   constructor(rpc?: Rpc) {
     this.currentRpc = rpc || DefaultRpcs[0];
+    Logger.log('SteemApiService constructor - Initial config.node:', {
+      value: SteemTxConfig.node,
+      type: typeof SteemTxConfig.node,
+      isArray: Array.isArray(SteemTxConfig.node)
+    });
     this.setRpc(this.currentRpc);
   }
 
@@ -18,10 +23,17 @@ export class SteemApiService {
     if (rpc.chainId) {
       SteemTxConfig.chain_id = rpc.chainId;
     }
+    Logger.log('RPC set to:', {
+      value: SteemTxConfig.node,
+      type: typeof SteemTxConfig.node,
+      isArray: Array.isArray(SteemTxConfig.node),
+      currentRpc: this.currentRpc
+    });
   }
 
   async getAccount(username: string): Promise<ExtendedAccount[]> {
     try {
+      Logger.log('Getting account:', username, 'from RPC:', SteemTxConfig.node);
       const response = await call('condenser_api.get_accounts', [[username]]);
       
       // Handle both direct array response and wrapped response
@@ -29,6 +41,7 @@ export class SteemApiService {
       
       Logger.log('Got accounts from API:', { 
         username, 
+        rpcUsed: SteemTxConfig.node,
         responseType: typeof response,
         isArray: Array.isArray(response),
         hasResult: response?.result !== undefined,
