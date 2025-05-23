@@ -6,6 +6,7 @@ import { SecureStorage } from './background/lib/storage';
 import { CryptoManager } from '../lib/crypto';
 import LocalStorageUtils from '../src/utils/localStorage.utils';
 import { LocalStorageKeyEnum } from '../src/reference-data/local-storage-key.enum';
+import Logger from '../src/utils/logger.utils';
 
 export default defineBackground(() => {
   console.log('Etta Keychain background script started', { id: browser.runtime.id });
@@ -106,26 +107,31 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Keychain is locked' });
             return;
           }
-          const accountsData = await LocalStorageUtils.getValueFromLocalStorage(
-            LocalStorageKeyEnum.ACCOUNTS
-          ) as any;
-          const accounts = accountsData ? Object.values(accountsData) : [];
-          const activeAccount = await LocalStorageUtils.getValueFromLocalStorage(
-            LocalStorageKeyEnum.ACTIVE_ACCOUNT
-          ) as string;
-          sendResponse({ 
-            success: true, 
-            accounts: accounts.map((acc: any) => ({
-              name: acc.name,
-              keys: {
-                posting: !!acc.keys.posting,
-                active: !!acc.keys.active,
-                owner: !!acc.keys.owner,
-                memo: !!acc.keys.memo
-              }
-            })),
-            activeAccount 
-          });
+          try {
+            const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+            if (!keychainPassword) {
+              sendResponse({ success: false, error: 'Keychain is locked' });
+              return;
+            }
+            const allAccounts = await accountService.getAllAccounts(keychainPassword);
+            const activeAccount = await storage.getActiveAccount();
+            sendResponse({ 
+              success: true, 
+              accounts: allAccounts.map((acc) => ({
+                name: acc.name,
+                keys: {
+                  posting: !!acc.keys.posting,
+                  active: !!acc.keys.active,
+                  owner: !!acc.keys.owner,
+                  memo: !!acc.keys.memo
+                }
+              })),
+              activeAccount 
+            });
+          } catch (error) {
+            Logger.error('Failed to get accounts', error);
+            sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+          }
           return;
         }
 

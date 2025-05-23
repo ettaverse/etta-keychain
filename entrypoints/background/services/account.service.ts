@@ -48,6 +48,12 @@ export class AccountService {
     }
 
     const account = accounts[0];
+    
+    // Validate account structure
+    if (!account || !account.active || !account.posting || !account.memo_key) {
+      Logger.error('Invalid account structure', { account, username });
+      throw new KeychainError(AccountErrorMessages.INCORRECT_USER);
+    }
 
     // Derive keys from master password
     const keys = this.keyManager.deriveKeys(username, password, account);

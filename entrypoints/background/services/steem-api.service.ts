@@ -22,7 +22,25 @@ export class SteemApiService {
 
   async getAccount(username: string): Promise<ExtendedAccount[]> {
     try {
-      const accounts = await call('condenser_api.get_accounts', [[username]]);
+      const response = await call('condenser_api.get_accounts', [[username]]);
+      
+      // Handle both direct array response and wrapped response
+      const accounts = Array.isArray(response) ? response : response?.result;
+      
+      Logger.log('Got accounts from API:', { 
+        username, 
+        responseType: typeof response,
+        isArray: Array.isArray(response),
+        hasResult: response?.result !== undefined,
+        accountsLength: accounts?.length, 
+        firstAccount: accounts?.[0] 
+      });
+      
+      if (!accounts || !Array.isArray(accounts)) {
+        Logger.error('Invalid API response format', { response, accounts });
+        throw new Error('Invalid API response format');
+      }
+      
       return accounts;
     } catch (error) {
       Logger.error('Error getting account', error);

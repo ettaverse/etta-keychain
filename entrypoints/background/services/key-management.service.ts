@@ -28,6 +28,11 @@ export class KeyManagementService {
 
   deriveKeys(username: string, password: string, account: Account | ExtendedAccount): Keys | null {
     try {
+      if (!account || !account.active || !account.posting || !account.memo_key) {
+        Logger.error('Invalid account passed to deriveKeys', { account, username });
+        return null;
+      }
+
       const posting = PrivateKey.fromLogin(username, password, 'posting');
       const active = PrivateKey.fromLogin(username, password, 'active');
       const memo = PrivateKey.fromLogin(username, password, 'memo');
