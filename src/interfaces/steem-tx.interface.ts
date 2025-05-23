@@ -20,8 +20,8 @@ export interface SteemTxBroadcastErrorResponse {
 }
 
 export interface TransactionResult {
-  id: string;
-  tx_id: string;
-  confirmed?: boolean;
-  isUsingMultisig?: boolean;
+  success: boolean;
+  result?: any;
+  error?: string;
+  transaction: any;
 }

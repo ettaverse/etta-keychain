@@ -43,17 +43,17 @@ const getKeys = async (username: string, password: string) => {
       return {
         memo: password,
         memoPubkey: memoKey,
-      };
+      } as Keys;
     } else if (KeysUtils.getPubkeyWeight(pubUnknown, postingInfo)) {
       return {
         posting: password,
-        postingPubkey: pubUnknown,
-      };
+        postingPubkey: pubUnknown || undefined,
+      } as Keys;
     } else if (KeysUtils.getPubkeyWeight(pubUnknown, activeInfo)) {
       return {
         active: password,
-        activePubkey: pubUnknown,
-      };
+        activePubkey: pubUnknown || undefined,
+      } as Keys;
     }
   }
 
@@ -258,21 +258,21 @@ const addKey = async (
   );
   if (keys && account) {
     switch (keyType) {
-      case KeyType.ACTIVE:
+      case 'active' as KeyType:
         if (!keys.active) {
           throw new Error('popup_html_wrong_key_active');
         }
         account.keys.active = keys.active;
         account.keys.activePubkey = keys.activePubkey;
         break;
-      case KeyType.POSTING:
+      case 'posting' as KeyType:
         if (!keys.posting) {
           throw new Error('popup_html_wrong_key_posting');
         }
         account.keys.posting = keys.posting;
         account.keys.postingPubkey = keys.postingPubkey;
         break;
-      case KeyType.MEMO:
+      case 'memo' as KeyType:
         if (!keys.memo) {
           throw new Error('popup_html_wrong_key_memo');
         }

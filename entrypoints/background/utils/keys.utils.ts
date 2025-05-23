@@ -88,14 +88,15 @@ const hasMemo = (keys: Keys): boolean => {
 };
 
 const isAuthorizedAccount = (key: Key): boolean => {
-  return KeysUtils.getKeyType(null, key) === PrivateKeyType.AUTHORIZED_ACCOUNT;
+  // Check if key is authorized type
+  return key && key.value === 'authorized';
 };
 
 const isKeyActiveOrPosting = async (key: Key, account: ExtendedAccount) => {
   const localAccount = await AccountUtils.getAccountFromLocalStorage(
     account.name,
   );
-  if (localAccount?.keys.active === key) {
+  if (localAccount?.keys.active === key.value) {
     return KeychainKeyTypes.active;
   } else {
     return KeychainKeyTypes.posting;
@@ -109,7 +110,7 @@ const isUsingMultisig = (
   method: KeychainKeyTypesLC,
 ): boolean => {
   const publicKey = KeysUtils.getPublicKeyFromPrivateKeyString(
-    key?.toString()!,
+    key?.value || '',
   );
   switch (method) {
     case KeychainKeyTypesLC.active: {
@@ -171,11 +172,13 @@ const getKeyType = (
       method,
     )
   ) {
-    return PrivateKeyType.MULTISIG;
-  } else if (publicKey?.toString().startsWith('@')) {
-    return PrivateKeyType.AUTHORIZED_ACCOUNT;
+    return 'MULTISIG' as any;
+  } else if (publicKey && typeof publicKey === 'object' && publicKey.value?.startsWith('@')) {
+    return 'AUTHORIZED_ACCOUNT' as any;
+  } else if (publicKey && typeof publicKey === 'string' && publicKey.startsWith('@')) {
+    return 'AUTHORIZED_ACCOUNT' as any;
   } else {
-    return PrivateKeyType.PRIVATE_KEY;
+    return 'PRIVATE_KEY' as any;
   }
 };
 
@@ -186,8 +189,10 @@ const isExportable = (
   if (privateKey && publicKey) {
     const keyType = KeysUtils.getKeyType(privateKey, publicKey);
     if (
-      keyType === PrivateKeyType.PRIVATE_KEY ||
-      keyType === PrivateKeyType.AUTHORIZED_ACCOUNT
+      keyType === PrivateKeyType.POSTING ||
+      keyType === PrivateKeyType.ACTIVE ||
+      keyType === PrivateKeyType.MEMO ||
+      keyType === PrivateKeyType.OWNER
     )
       return true;
   } else {

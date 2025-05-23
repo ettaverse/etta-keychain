@@ -7,22 +7,23 @@ export interface Keys {
   memoPubkey?: string;
 }
 
-export type Key = string | undefined;
-
-export enum KeyType {
-  ACTIVE = 'ACTIVE',
-  POSTING = 'POSTING',
-  MEMO = 'MEMO',
+export interface Key {
+  type: KeyType;
+  value: string;
 }
 
+export type KeyType = 'posting' | 'active' | 'memo' | 'owner';
+
 export enum PrivateKeyType {
-  PRIVATE_KEY = 'PRIVATE_KEY',
-  AUTHORIZED_ACCOUNT = 'AUTHORIZED_ACCOUNT',
-  MULTISIG = 'MULTISIG',
+  POSTING = 'POSTING',
+  ACTIVE = 'ACTIVE',
+  MEMO = 'MEMO',
+  OWNER = 'OWNER',
 }
 
 export interface TransactionOptions {
   multisigThreshold?: number;
   expirationTime?: number;
+  expire?: number;
   [key: string]: any;
 }

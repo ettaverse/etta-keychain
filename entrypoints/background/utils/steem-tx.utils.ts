@@ -58,21 +58,11 @@ const sendOperation = async (
     );
 
   if (transactionResult) {
-    if (transactionResult?.isUsingMultisig) {
-      return {
-        id: transactionResult.tx_id,
-        tx_id: transactionResult.tx_id,
-        isUsingMultisig: true,
-      };
-    } else {
-      return {
-        id: transactionResult.tx_id,
-        tx_id: transactionResult.tx_id,
-        confirmed: confirmation
-          ? await confirmTransaction(transactionResult.tx_id)
-          : false,
-      } as TransactionResult;
-    }
+    return {
+      success: true,
+      result: transactionResult,
+      transaction: null,
+    };
   } else {
     return null;
   }
@@ -131,7 +121,7 @@ const createSignAndBroadcastTransaction = async (
     throw new Error('Multisig transactions not yet implemented');
   } else {
     try {
-      const privateKey = PrivateKey.fromString(key!.toString());
+      const privateKey = PrivateKey.fromString(key!.value);
       steemTransaction.sign(privateKey);
     } catch (err) {
       Logger.error(err);
