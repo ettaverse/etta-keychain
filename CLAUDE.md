@@ -29,6 +29,11 @@ pnpm zip:firefox  # Create Firefox extension zip
 
 # Type checking
 pnpm compile      # Run TypeScript compiler check
+
+# Testing
+pnpm test         # Run tests in watch mode
+pnpm test:ui      # Run tests with UI interface
+pnpm test:run     # Run tests once
 ```
 
 ## Architecture
@@ -75,7 +80,8 @@ The extension requires:
 
 The project is in early development with:
 - Basic popup UI structure
-- No testing framework configured yet
+- Vitest testing framework configured
+- Crypto utilities implemented with @noble libraries
 - No linting tools configured yet
 - Minimal functionality implemented
 
