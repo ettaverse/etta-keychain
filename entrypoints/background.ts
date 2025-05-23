@@ -39,6 +39,12 @@ export default defineBackground(() => {
 
         case 'setupKeychainPassword': {
           await authService.setupKeychainPassword(message.password, message.confirmPassword);
+          // Auto-unlock after setting up password
+          await authService.unlockKeychain(message.password);
+          await LocalStorageUtils.saveValueInSessionStorage(
+            LocalStorageKeyEnum.__MK,
+            message.password
+          );
           sendResponse({ success: true });
           return;
         }
@@ -46,6 +52,11 @@ export default defineBackground(() => {
         case 'unlockKeychain': {
           const unlocked = await authService.unlockKeychain(message.password);
           if (unlocked) {
+            // Save the keychain password to session storage for account operations
+            await LocalStorageUtils.saveValueInSessionStorage(
+              LocalStorageKeyEnum.__MK,
+              message.password
+            );
             sendResponse({ success: true });
           } else {
             const failedAttempts = await authService.getFailedAttempts();
@@ -60,6 +71,10 @@ export default defineBackground(() => {
 
         case 'lockKeychain': {
           authService.lockKeychain();
+          // Clear the keychain password from session storage
+          await LocalStorageUtils.removeValueFromSessionStorage(
+            LocalStorageKeyEnum.__MK
+          );
           sendResponse({ success: true });
           return;
         }
@@ -79,10 +94,15 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Keychain is locked' });
             return;
           }
+          const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+          if (!keychainPassword) {
+            sendResponse({ success: false, error: 'Keychain is locked' });
+            return;
+          }
           await accountService.importAccountWithMasterPassword(
             message.username,
             message.password,
-            authService.getSessionKey()!
+            keychainPassword
           );
           sendResponse({ success: true });
           return;
@@ -93,10 +113,15 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Keychain is locked' });
             return;
           }
+          const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+          if (!keychainPassword) {
+            sendResponse({ success: false, error: 'Keychain is locked' });
+            return;
+          }
           await accountService.importAccountWithWIF(
             message.username,
             message.wif,
-            authService.getSessionKey()!
+            keychainPassword
           );
           sendResponse({ success: true });
           return;

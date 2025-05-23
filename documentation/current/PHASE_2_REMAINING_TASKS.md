@@ -160,19 +160,19 @@ export class AccountService {
 
 ### 🎨 UI Task 2.2: Key Import & Master Password Interface
 **Location:** `entrypoints/popup/`
-**Status:** NOT STARTED
+**Status:** COMPLETED ✅
 
 **Subtasks:**
-- [ ] Username input for STEEM account
-- [ ] Master password input component with masked display
-- [ ] Private key input component with masked display
-- [ ] Import method selector (master password vs individual keys)
-- [ ] Key type selector/detector UI
-- [ ] Key validation visual feedback
-- [ ] Import progress indicator with key derivation status
-- [ ] Display derived keys confirmation
-- [ ] Error display for invalid keys or wrong password
-- [ ] Success confirmation UI
+- [x] Username input for STEEM account (in AccountImportForm)
+- [x] Master password input component with masked display (in AccountImportForm)
+- [x] Private key input component with masked display (in AccountImportForm)
+- [x] Import method selector (master password vs individual keys) (in AccountImportForm)
+- [x] Key type selector/detector UI (in AccountImportForm)
+- [x] Key validation visual feedback (in AccountImportForm)
+- [x] Import progress indicator with key derivation status (in AccountImportForm)
+- [x] Display derived keys confirmation (shows imported key types)
+- [x] Error display for invalid keys or wrong password (in AccountImportForm)
+- [x] Success confirmation UI (redirects to account list)
 
 ### 🎨 UI Task 2.2.1: STEEM Account Connection Interface
 **Location:** `entrypoints/popup/`
