@@ -1,7 +1,7 @@
 # Etta Keychain Development Status
 
-**Last Updated:** Current  
-**Project Status:** Active Development - Phase 2  
+**Last Updated:** January 2025  
+**Project Status:** Active Development - Phase 3  
 
 ## Overview
 
@@ -31,49 +31,51 @@ Tasks are categorized as:
 - Core interfaces & types
 - Default RPC configuration
 
-#### Phase 2: Security & Storage (Partial)
-- [Task 2.1: Secure Storage System](./completed/TASK_2.1_SECURE_STORAGE_SYSTEM.md) ✅
+#### [Phase 2: Security & Storage](./completed/PHASE_2_SECURITY_STORAGE.md)
+**Status:** COMPLETED ✅
+
+**Core Tasks:**
+- Task 2.1: Secure Storage System ✅
   - Multi-account encrypted storage
   - Import method tracking
   - Backup/restore functionality
   - 24 unit tests passing
   
-- [Task 2.2: Core Utilities](./completed/TASK_2.2_CORE_UTILITIES.md) ✅
+- Task 2.2: Core Utilities ✅
   - AccountUtils, KeysUtils, EncryptUtils
   - MkUtils, PasswordUtils, ErrorUtils
   - SteemTxUtils for blockchain operations
   
-- [Task 2.2.1: Key Derivation](./completed/TASK_2.2.1_KEY_DERIVATION.md) ✅
+- Task 2.2.1: Key Derivation ✅
   - Master password derivation
   - WIF key detection
   - Authority validation
-
-### 🚧 In Progress
-
-#### [Phase 2: Security & Storage (Remaining)](./current/PHASE_2_REMAINING_TASKS.md)
-- **Task 2.3: Service Layer Architecture** 🔴 Priority
-  - SteemApiService
-  - KeyManagementService
-  - AccountService
   
-- **Task 2.4: Authentication System** 🔴 Priority
+- Task 2.3: Service Layer Architecture ✅
+  - SteemApiService, KeyManagementService
+  - AccountService, TransactionService
+  - Dependency injection, 81 unit tests
+  
+- Task 2.4: Authentication System ✅
   - Keychain password security
   - Auto-lock functionality
   - Session management
-  
-- **UI Tasks**: All Phase 2 UI components
-  - Account management interface
-  - Key import interface
-  - Authentication screens
 
-### 📋 Planned
+**UI Tasks:**
+- Task 2.1: Account Management Interface ✅
+- Task 2.2: Key Import & Master Password Interface ✅
+- Task 2.2.1: STEEM Account Connection Interface ✅
+- Task 2.4: Authentication Interface ✅
 
-#### [Phase 3: API Implementation](./future/PHASE_3_API_IMPLEMENTATION.md)
+### 🚧 In Progress
+
+#### [Phase 3: API Implementation](./current/PHASE_3_API_IMPLEMENTATION.md)
+- Starting development of core API functionality
 - Content script injection
 - Background message handling
-- Core API methods (transfer, vote, custom JSON)
-- Transaction signing engine
-- Transaction approval UI
+- Core API methods
+
+### 📋 Planned
 
 #### [Phase 4: Settings & Configuration](./future/PHASE_4_SETTINGS_CONFIG.md)
 - Settings management system
@@ -107,21 +109,21 @@ Tasks are categorized as:
 
 ## Current Sprint Focus
 
-### Immediate Priorities (Week 2-3)
-1. **Complete Service Layer Architecture (Task 2.3)**
-   - Refactor utilities into proper services
-   - Implement dependency injection
-   - Add comprehensive testing
+### Phase 3 Priorities
+1. **Content Script Implementation**
+   - Set up injection system
+   - Implement message passing
+   - Create API bridge
 
-2. **Implement Authentication System (Task 2.4)**
-   - Keychain password management
-   - Auto-lock mechanism
-   - Session security
+2. **Core API Methods**
+   - Transfer operations
+   - Voting functionality
+   - Custom JSON broadcasting
 
-3. **Begin UI Development**
-   - Set up component structure
-   - Implement basic layouts
-   - Create account management screens
+3. **Transaction UI**
+   - Approval dialogs
+   - Transaction status
+   - Error handling
 
 ## Architecture Decisions
 
@@ -130,23 +132,26 @@ Tasks are categorized as:
 - ✅ Using @noble libraries for cryptography (security-audited)
 - ✅ Two-level encryption: Master Key (session) + Account Keys (storage)
 - ✅ Import method tracking for better UX
+- ✅ Service-based architecture with dependency injection
+- ✅ React Context for state management
+- ✅ Single-page popup with conditional rendering
 
 ### Pending
-- 🔄 Dependency injection framework selection
-- 🔄 State management solution (Context API vs Zustand)
-- 🔄 Routing strategy for popup UI
+- 🔄 Content script injection strategy
+- 🔄 Transaction approval flow design
+- 🔄 API versioning approach
 
 ## Key Metrics
 
 ### Code Quality
-- **Test Coverage:** ~24 tests passing (storage module)
+- **Test Coverage:** 105+ tests passing (storage, services, utilities)
 - **TypeScript:** Strict mode enabled
 - **Bundle Size:** TBD (target <5MB)
 
 ### Progress Tracking
-- **Phases Complete:** 1/6
-- **Phase 2 Progress:** ~40%
-- **Estimated MVP:** 4-5 weeks remaining
+- **Phases Complete:** 2/6
+- **Phase 3 Progress:** 0% (starting)
+- **Estimated MVP:** 3-4 weeks remaining
 
 ## Quick Links
 
@@ -179,10 +184,10 @@ pnpm compile      # TypeScript check
 
 ## Next Actions
 
-1. Review [Phase 2 Remaining Tasks](./current/PHASE_2_REMAINING_TASKS.md)
-2. Start implementing Service Layer (Task 2.3)
-3. Set up UI component structure
-4. Plan authentication flow implementation
+1. Review [Phase 3 API Implementation](./future/PHASE_3_API_IMPLEMENTATION.md)
+2. Set up content script infrastructure
+3. Design message passing protocol
+4. Implement first API method (transfer)
 
 ---
 

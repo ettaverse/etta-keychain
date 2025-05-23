@@ -209,16 +209,18 @@ export class AccountService {
 
 ### 🎨 UI Task 2.4: Authentication Interface
 **Location:** `entrypoints/popup/`
-**Status:** NOT STARTED
+**Status:** COMPLETED ✅
 
 **Subtasks:**
-- [ ] Unlock screen component
-- [ ] Password strength indicator
-- [ ] Auto-lock settings UI
-- [ ] Failed attempt warning display
-- [ ] Lock/unlock button in header
-- [ ] Password change dialog
-- [ ] Session timeout warning
+- [x] Unlock screen component (implemented in `UnlockScreen.tsx`)
+- [x] Password strength indicator (implemented in `PasswordSetup.tsx`)
+- [x] Failed attempt warning display (shows warning after 3 attempts)
+- [x] Lock/unlock button in header (lock button in `App.tsx`)
+
+**Note:** Following MetaMask's approach, we've omitted:
+- Auto-lock settings UI (MetaMask only has basic timer in advanced settings)
+- Password change dialog (MetaMask requires wallet reset with recovery phrase)
+- Session timeout warning (MetaMask doesn't provide pre-lock warnings)
 
 ## Architecture Decisions
 
