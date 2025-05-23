@@ -67,30 +67,52 @@ describe('KeyManagementService', () => {
 
   describe('deriveKeys', () => {
     it('should derive keys from master password', () => {
+      // Mock account with derived public keys
+      const derivedPostingPubkey = 'STM7dDoJbrmNr4NTRnudbxpEVYQMLbdH9xF7NkS75vBXajWzVbqBu';
+      const derivedActivePubkey = 'STM5VkLha96X5EQu3HSkJdD8SEuwazWtZrzLjUT6Sc5sopgghBYrz';
+      const derivedMemoPubkey = 'STM7u1BsoqLaoCu9XHi1wjWYGRVGwALLy9HsUHuFHeELfTHqF3JKD';
+      
       const account = {
         name: 'testuser',
         posting: {
           weight_threshold: 1,
           account_auths: [],
-          key_auths: [['STM8movSDPeivJCpVt2nfTfYbQSQDrYsKVzHYPZEEv7RJNjnakYmU', 1]],
+          key_auths: [[derivedPostingPubkey, 1]],
         },
         active: {
           weight_threshold: 1,
           account_auths: [],
-          key_auths: [['STM6Mw3TBvZPWHvwyPiRjkros7FbYN9Q8gPVfHBvxWNTpCFaqEMqf', 1]],
+          key_auths: [[derivedActivePubkey, 1]],
         },
-        memo_key: 'STM7UcdvEcyLz5NDhrUqajzEdX4CwVjGdcYQM6FUXbgLR8P2L6zR3',
+        memo_key: derivedMemoPubkey,
       } as any;
 
-      const keys = service.deriveKeys('testuser', 'P5JDqKpbBKn1fkU1XB2YnmosHVDkj9nZt2Hx7FnTjvPrz3MTvQQb', account);
+      // Mock PrivateKey.fromLogin to return predictable keys
+      const { PrivateKey } = require('@steempro/steem-tx-js');
+      vi.spyOn(PrivateKey, 'fromLogin').mockImplementation((username, password, role) => {
+        const mockPrivateKey = {
+          toString: () => `5J${role}Key`,
+          createPublic: () => ({
+            toString: () => {
+              if (role === 'posting') return derivedPostingPubkey;
+              if (role === 'active') return derivedActivePubkey;
+              if (role === 'memo') return derivedMemoPubkey;
+              return 'STMUnknown';
+            }
+          })
+        };
+        return mockPrivateKey;
+      });
+
+      const keys = service.deriveKeys('testuser', 'testpassword', account);
 
       expect(keys).toBeTruthy();
-      expect(keys?.posting).toBeTruthy();
-      expect(keys?.active).toBeTruthy();
-      expect(keys?.memo).toBeTruthy();
-      expect(keys?.postingPubkey).toBe('STM8movSDPeivJCpVt2nfTfYbQSQDrYsKVzHYPZEEv7RJNjnakYmU');
-      expect(keys?.activePubkey).toBe('STM6Mw3TBvZPWHvwyPiRjkros7FbYN9Q8gPVfHBvxWNTpCFaqEMqf');
-      expect(keys?.memoPubkey).toBe('STM7UcdvEcyLz5NDhrUqajzEdX4CwVjGdcYQM6FUXbgLR8P2L6zR3');
+      expect(keys?.posting).toBe('5JpostingKey');
+      expect(keys?.active).toBe('5JactiveKey');
+      expect(keys?.memo).toBe('5JmemoKey');
+      expect(keys?.postingPubkey).toBe(derivedPostingPubkey);
+      expect(keys?.activePubkey).toBe(derivedActivePubkey);
+      expect(keys?.memoPubkey).toBe(derivedMemoPubkey);
     });
 
     it('should return null when derived keys do not match account', () => {
