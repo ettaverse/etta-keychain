@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SteemApiService } from './steem-api.service';
+import { SteemApiService } from '../../../background/services/steem-api.service';
 import { call } from '@steempro/steem-tx-js';
-import { DefaultRpcs } from '../../../src/reference-data/default-rpc.list';
+import { DefaultRpcs } from '../../../../src/reference-data/default-rpc.list';
 
 vi.mock('@steempro/steem-tx-js', () => ({
   call: vi.fn(),

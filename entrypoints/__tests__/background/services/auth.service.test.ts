@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { AuthService } from './auth.service';
-import { CryptoManager } from '../../../lib/crypto';
-import { KeychainError } from '../../../src/keychain-error';
-import LocalStorageUtils from '../../../src/utils/localStorage.utils';
+import { AuthService } from '../../../background/services/auth.service';
+import { CryptoManager } from '../../../../lib/crypto';
+import { KeychainError } from '../../../../src/keychain-error';
+import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
 import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
 // Mock dependencies

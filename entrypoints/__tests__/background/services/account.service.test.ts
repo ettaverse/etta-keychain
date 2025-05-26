@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { AccountService, AccountErrorMessages } from './account.service';
-import { SecureStorage } from '../lib/storage';
-import { SteemApiService } from './steem-api.service';
-import { KeyManagementService } from './key-management.service';
-import { KeychainError } from '../../../src/keychain-error';
-import { PrivateKeyType } from '../../../src/interfaces/keys.interface';
+import { AccountService, AccountErrorMessages } from '../../../background/services/account.service';
+import { SecureStorage } from '../../../background/lib/storage';
+import { SteemApiService } from '../../../background/services/steem-api.service';
+import { KeyManagementService } from '../../../background/services/key-management.service';
+import { KeychainError } from '../../../../src/keychain-error';
+import { PrivateKeyType } from '../../../../src/interfaces/keys.interface';
 
 vi.mock('../lib/storage');
 vi.mock('./steem-api.service');

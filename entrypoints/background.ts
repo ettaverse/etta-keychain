@@ -23,9 +23,194 @@ export default defineBackground(async () => {
   const keyManager = new KeyManagementService();
   const accountService = new AccountService(storage, steemApi, keyManager);
 
+  // Keychain API request handler
+  async function handleKeychainRequest(message: any, sender: any, sendResponse: any) {
+    try {
+      const { event, data } = message;
+      
+      // Validate origin for security
+      if (!sender.tab?.url) {
+        sendResponse({
+          success: false,
+          error: 'Invalid request origin',
+          request_id: data.request_id
+        });
+        return;
+      }
+
+      console.log('Handling keychain request:', event, data);
+
+      switch (event) {
+        case 'swHandshake': {
+          // Simple handshake response
+          browser.tabs.sendMessage(sender.tab.id!, {
+            type: 'keychain_handshake'
+          });
+          break;
+        }
+
+        case 'swRequest': {
+          // Process keychain requests
+          await processKeychainRequest(data, sender, sendResponse);
+          break;
+        }
+
+        default:
+          sendResponse({
+            success: false,
+            error: 'Unknown keychain event',
+            request_id: data.request_id
+          });
+      }
+    } catch (error) {
+      console.error('Keychain request error:', error);
+      sendResponse({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        request_id: message.data?.request_id
+      });
+    }
+  }
+
+  // Process individual keychain requests
+  async function processKeychainRequest(data: any, sender: any, sendResponse: any) {
+    const { type, request_id } = data;
+
+    // Check if keychain is unlocked for operations that require authentication
+    if (type !== 'handshake' && authService.isLocked()) {
+      browser.tabs.sendMessage(sender.tab.id!, {
+        type: 'keychain_response',
+        response: {
+          success: false,
+          error: 'Keychain is locked',
+          message: 'Please unlock your Etta Keychain first',
+          request_id
+        }
+      });
+      return;
+    }
+
+    switch (type) {
+      case 'decode': {
+        // TODO: Implement message decoding/verification
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Message verification not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'custom': {
+        // TODO: Implement custom JSON operations
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Custom JSON operations not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'transfer': {
+        // TODO: Implement transfer operations
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Transfer operations not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'vote': {
+        // TODO: Implement vote operations
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Vote operations not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'broadcast': {
+        // TODO: Implement broadcast operations
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Broadcast operations not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'signTx': {
+        // TODO: Implement transaction signing
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Transaction signing not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      case 'encode': {
+        // TODO: Implement message encoding
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Not implemented',
+            message: 'Message encoding not yet implemented',
+            request_id
+          }
+        });
+        break;
+      }
+
+      default:
+        browser.tabs.sendMessage(sender.tab.id!, {
+          type: 'keychain_response',
+          response: {
+            success: false,
+            error: 'Unknown request type',
+            message: `Request type '${type}' is not supported`,
+            request_id
+          }
+        });
+    }
+  }
+
   // Message handler
-  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Background received message:', message.action);
+  browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
+    console.log('Background received message:', message.action || message.type);
+
+    // Handle keychain API requests from content script
+    if (message.type === 'keychain_request') {
+      handleKeychainRequest(message, sender, sendResponse);
+      return true;
+    }
 
     // Handle async operations
     (async () => {

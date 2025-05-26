@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { KeyManagementService } from './key-management.service';
-import { PrivateKeyType } from '../../../src/interfaces/keys.interface';
+import { KeyManagementService } from '../../../background/services/key-management.service';
+import { PrivateKeyType } from '../../../../src/interfaces/keys.interface';
 import { Authority, ExtendedAccount } from '@steempro/dsteem';
 
 describe('KeyManagementService', () => {

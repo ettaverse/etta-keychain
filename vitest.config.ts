@@ -1,15 +1,20 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import { WxtVitest } from 'wxt/testing';
 
 export default defineConfig({
+  plugins: [WxtVitest()],
   test: {
     globals: true,
-    environment: 'node',
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './'),
-      '#imports': path.resolve(__dirname, './__mocks__/wxt-imports.ts'),
-    },
-  },
+    include: [
+      '**/*.{test,spec}.{js,ts}'
+    ],
+    exclude: [
+      'entrypoints/__tests__/**'
+    ],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      include: ['entrypoints/**/*.ts', 'src/**/*.ts', 'lib/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.spec.ts']
+    }
+  }
 });

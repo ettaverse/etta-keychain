@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { SecureStorage, ImportMethod } from "./storage";
+import { SecureStorage, ImportMethod } from "../../../background/lib/storage";
 import LocalStorageUtils from "@/src/utils/localStorage.utils";
-import EncryptUtils from "../utils/encrypt.utils";
+import EncryptUtils from "../../../background/utils/encrypt.utils";
 import { LocalStorageKeyEnum } from "@/src/reference-data/local-storage-key.enum";
 import { Keys } from "@/src/interfaces";
 

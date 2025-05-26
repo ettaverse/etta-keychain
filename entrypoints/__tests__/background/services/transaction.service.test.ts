@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TransactionService } from './transaction.service';
-import { SteemApiService } from './steem-api.service';
-import { KeyManagementService } from './key-management.service';
-import { Key } from '../../../src/interfaces/keys.interface';
+import { TransactionService } from '../../../background/services/transaction.service';
+import { SteemApiService } from '../../../background/services/steem-api.service';
+import { KeyManagementService } from '../../../background/services/key-management.service';
+import { Key } from '../../../../src/interfaces/keys.interface';
 import { Operation } from '@steempro/dsteem';
 import { PrivateKey, Transaction as SteemTransaction } from '@steempro/steem-tx-js';
-import MkUtils from '../utils/mk.utils';
+import MkUtils from '../../../background/utils/mk.utils';
 
 // Mock dependencies
 vi.mock('./steem-api.service');
