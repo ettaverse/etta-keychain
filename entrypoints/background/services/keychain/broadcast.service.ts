@@ -37,14 +37,22 @@ export class BroadcastService {
       }
 
       const privateKey = this.getPrivateKeyByMethod(account, method);
-      if (!privateKey) {
-        throw new KeychainError(`${method} key not available for this account`);
-      }
 
       this.validateOperations(operations);
 
-      // TODO: Implement actual broadcast using TransactionService
+      // Create a key object for the transaction service
+      const key = {
+        type: method.toLowerCase() as 'active' | 'posting' | 'memo',
+        value: privateKey
+      };
+
+      // Broadcast operations using TransactionService
       Logger.info(`Broadcasting ${operations.length} operations for ${targetUsername} with ${method.toLowerCase()} key`);
+      const result = await this.transactionService.sendOperation(operations, key);
+
+      if (!result || !result.success) {
+        throw new KeychainError(result?.error || 'Broadcast failed');
+      }
 
       return {
         success: true,
@@ -52,8 +60,9 @@ export class BroadcastService {
           account: targetUsername,
           operations,
           method: method.toLowerCase(),
-          tx_id: `broadcast_${Date.now()}`,
-          message: `Broadcast successful`
+          tx_id: result.result?.id || result.result?.tx_id,
+          message: 'Broadcast successful',
+          ...result.result
         },
         request_id
       };
@@ -77,18 +86,29 @@ export class BroadcastService {
     return activeAccount.name;
   }
 
-  private getPrivateKeyByMethod(account: any, method: string): string | undefined {
+  private getPrivateKeyByMethod(account: any, method: string): string {
     const keyType = method.toLowerCase();
+    let privateKey: string | undefined;
+    
     switch (keyType) {
       case 'posting':
-        return account.keys.posting;
+        privateKey = account.keys?.posting;
+        break;
       case 'active':
-        return account.keys.active;
+        privateKey = account.keys?.active;
+        break;
       case 'memo':
-        return account.keys.memo;
+        privateKey = account.keys?.memo;
+        break;
       default:
         throw new KeychainError(`Invalid key type: ${method}`);
     }
+    
+    if (!privateKey) {
+      throw new KeychainError(`${method} key not available for this account`);
+    }
+    
+    return privateKey;
   }
 
   private validateOperations(operations: any[]): void {

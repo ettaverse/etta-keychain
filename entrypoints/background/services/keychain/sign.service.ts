@@ -5,6 +5,7 @@ import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
 import { LocalStorageKeyEnum } from '../../../../src/reference-data/local-storage-key.enum';
 import { KeychainError } from '../../../../src/keychain-error';
 import { KeychainResponse } from '../types/keychain-api.types';
+import { cryptoManager } from '../../../../lib/crypto';
 
 export class SignService {
   constructor(
@@ -37,12 +38,9 @@ export class SignService {
       }
 
       const privateKey = this.getPrivateKeyByMethod(account, method);
-      if (!privateKey) {
-        throw new KeychainError(`${method} key not available for this account`);
-      }
 
-      // TODO: Implement actual message signing
-      const signature = `SIG_${targetUsername}_${method}_${Date.now()}`;
+      // Sign the message using the private key
+      const signature = await cryptoManager.signBuffer(message, privateKey);
 
       return {
         success: true,
@@ -89,20 +87,16 @@ export class SignService {
       }
 
       const privateKey = this.getPrivateKeyByMethod(account, method);
-      if (!privateKey) {
-        throw new KeychainError(`${method} key not available for this account`);
-      }
 
       this.validateTransaction(tx);
 
-      // TODO: Implement actual transaction signing
-      const signature = `SIG_${targetUsername}_${method}_${Date.now()}`;
+      // Sign the transaction using the private key
+      const signedTransaction = await cryptoManager.signTransaction(tx, privateKey);
 
       return {
         success: true,
         result: {
-          ...tx,
-          signatures: [signature],
+          ...signedTransaction,
           account: targetUsername,
           method: method.toLowerCase()
         },
@@ -128,18 +122,29 @@ export class SignService {
     return activeAccount.name;
   }
 
-  private getPrivateKeyByMethod(account: any, method: string): string | undefined {
+  private getPrivateKeyByMethod(account: any, method: string): string {
     const keyType = method.toLowerCase();
+    let privateKey: string | undefined;
+    
     switch (keyType) {
       case 'posting':
-        return account.keys.posting;
+        privateKey = account.keys?.posting;
+        break;
       case 'active':
-        return account.keys.active;
+        privateKey = account.keys?.active;
+        break;
       case 'memo':
-        return account.keys.memo;
+        privateKey = account.keys?.memo;
+        break;
       default:
         throw new KeychainError(`Invalid key type: ${method}`);
     }
+    
+    if (!privateKey) {
+      throw new KeychainError(`${method} key not available for this account`);
+    }
+    
+    return privateKey;
   }
 
   private validateTransaction(tx: any): void {

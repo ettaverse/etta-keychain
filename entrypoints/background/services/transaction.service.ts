@@ -219,24 +219,70 @@ export class TransactionService {
    * Wait for transaction confirmation
    */
   private async waitForConfirmation(txId: string, maxRetries: number = 10): Promise<boolean> {
+    Logger.log(`Waiting for transaction confirmation: ${txId}`);
+    
     for (let i = 0; i < maxRetries; i++) {
       try {
         // Wait 3 seconds between checks
         await new Promise(resolve => setTimeout(resolve, 3000));
         
-        // Check if transaction is in a block
-        // This is a simplified check - you might want to implement more robust confirmation
-        const props = await this.steemApi.getDynamicGlobalProperties();
+        // Try to get the transaction from the blockchain
+        const transaction = await this.getTransactionStatus(txId);
         
-        // If we get here without error, assume transaction is confirmed
-        // In production, you'd want to check the actual block for the transaction
-        return true;
+        if (transaction) {
+          Logger.log(`Transaction ${txId} confirmed in block ${transaction.block_num}`);
+          return true;
+        }
+        
+        Logger.log(`Transaction ${txId} not yet confirmed, attempt ${i + 1}/${maxRetries}`);
       } catch (error) {
         Logger.warn(`Confirmation check ${i + 1}/${maxRetries} failed`, error);
       }
     }
     
+    Logger.warn(`Transaction ${txId} could not be confirmed after ${maxRetries} attempts`);
     return false;
+  }
+
+  /**
+   * Get transaction status from blockchain
+   */
+  async getTransactionStatus(txId: string): Promise<any | null> {
+    try {
+      // Use steem-tx-js utility for getting transaction
+      const { SteemTxUtils } = await import('../utils/steem-tx.utils');
+      const transaction = await SteemTxUtils.getTransaction(txId);
+      return transaction;
+    } catch (error) {
+      // Transaction not found or other error
+      Logger.log(`Transaction ${txId} not found or error occurred:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Public method to check transaction confirmation status
+   */
+  async checkTransactionConfirmation(txId: string): Promise<{
+    confirmed: boolean;
+    transaction?: any;
+    block_num?: number;
+    timestamp?: string;
+  }> {
+    const transaction = await this.getTransactionStatus(txId);
+    
+    if (transaction) {
+      return {
+        confirmed: true,
+        transaction,
+        block_num: transaction.block_num,
+        timestamp: transaction.timestamp
+      };
+    }
+    
+    return {
+      confirmed: false
+    };
   }
 
   /**

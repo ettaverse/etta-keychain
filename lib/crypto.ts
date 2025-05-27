@@ -3,6 +3,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
 import { gcm } from '@noble/ciphers/aes';
 import { utf8ToBytes, bytesToUtf8, bytesToHex, hexToBytes } from '@noble/ciphers/utils';
+import { PrivateKey, Transaction } from '@steempro/steem-tx-js';
 
 const PBKDF2_ITERATIONS = 100000;
 const SALT_LENGTH = 32;
@@ -108,6 +109,35 @@ export class CryptoManager {
       return computedHash === hash;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Sign a buffer/message with a STEEM private key
+   */
+  async signBuffer(message: string, privateKeyString: string): Promise<string> {
+    try {
+      const privateKey = PrivateKey.fromString(privateKeyString);
+      const messageBytes = utf8ToBytes(message);
+      const messageHash = sha256(messageBytes);
+      const signature = privateKey.sign(messageHash);
+      return signature.toString();
+    } catch (error) {
+      throw new Error(`Buffer signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Sign a STEEM transaction with a private key
+   */
+  async signTransaction(transaction: any, privateKeyString: string): Promise<any> {
+    try {
+      const privateKey = PrivateKey.fromString(privateKeyString);
+      const steemTransaction = new Transaction(transaction);
+      steemTransaction.sign(privateKey);
+      return steemTransaction;
+    } catch (error) {
+      throw new Error(`Transaction signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

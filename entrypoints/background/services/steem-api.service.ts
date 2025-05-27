@@ -32,33 +32,33 @@ export class SteemApiService {
   }
 
   async getAccount(username: string): Promise<ExtendedAccount[]> {
-    try {
-      Logger.log('Getting account:', username, 'from RPC:', SteemTxConfig.node);
-      const response = await call('condenser_api.get_accounts', [[username]]);
-      
-      // Handle both direct array response and wrapped response
-      const accounts = Array.isArray(response) ? response : response?.result;
-      
-      Logger.log('Got accounts from API:', { 
-        username, 
-        rpcUsed: SteemTxConfig.node,
-        responseType: typeof response,
-        isArray: Array.isArray(response),
-        hasResult: response?.result !== undefined,
-        accountsLength: accounts?.length, 
-        firstAccount: accounts?.[0] 
-      });
-      
-      if (!accounts || !Array.isArray(accounts)) {
-        Logger.error('Invalid API response format', { response, accounts });
-        throw new Error('Invalid API response format');
-      }
-      
-      return accounts;
-    } catch (error) {
-      Logger.error('Error getting account', error);
-      throw error;
-    }
+    return await this.retryApiCall(
+      async () => {
+        Logger.log('Getting account:', username, 'from RPC:', SteemTxConfig.node);
+        const response = await call('condenser_api.get_accounts', [[username]]);
+        
+        // Handle both direct array response and wrapped response
+        const accounts = Array.isArray(response) ? response : response?.result;
+        
+        Logger.log('Got accounts from API:', { 
+          username, 
+          rpcUsed: SteemTxConfig.node,
+          responseType: typeof response,
+          isArray: Array.isArray(response),
+          hasResult: response?.result !== undefined,
+          accountsLength: accounts?.length, 
+          firstAccount: accounts?.[0] 
+        });
+        
+        if (!accounts || !Array.isArray(accounts)) {
+          Logger.error('Invalid API response format', { response, accounts });
+          throw new Error('Invalid API response format');
+        }
+        
+        return accounts;
+      },
+      `getAccount(${username})`
+    );
   }
 
   async getAccountRC(username: string): Promise<RC> {
@@ -75,12 +75,10 @@ export class SteemApiService {
   }
 
   async getDynamicGlobalProperties(): Promise<DynamicGlobalProperties> {
-    try {
-      return await call('condenser_api.get_dynamic_global_properties', []);
-    } catch (error) {
-      Logger.error('Error getting dynamic global properties', error);
-      throw error;
-    }
+    return await this.retryApiCall(
+      async () => await call('condenser_api.get_dynamic_global_properties', []),
+      'getDynamicGlobalProperties'
+    );
   }
 
   async getHeadBlockNumber(): Promise<number> {
@@ -111,11 +109,34 @@ export class SteemApiService {
   }
 
   async broadcastTransaction(tx: Transaction): Promise<any> {
-    try {
-      return await call('condenser_api.broadcast_transaction', [tx]);
-    } catch (error) {
-      Logger.error('Error broadcasting transaction', error);
-      throw error;
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        Logger.log(`Broadcasting transaction attempt ${attempt}/${maxRetries}`);
+        const result = await call('condenser_api.broadcast_transaction', [tx]);
+        return result;
+      } catch (error) {
+        Logger.error(`Broadcast attempt ${attempt}/${maxRetries} failed:`, error);
+        
+        if (attempt === maxRetries) {
+          // If this was the last attempt, try switching to a different RPC node
+          if (this.tryNextRpc()) {
+            Logger.log('Switched to next RPC node for final retry');
+            try {
+              return await call('condenser_api.broadcast_transaction', [tx]);
+            } catch (finalError) {
+              Logger.error('Final broadcast attempt failed after RPC switch:', finalError);
+              throw finalError;
+            }
+          }
+          throw error;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+      }
     }
   }
 
@@ -144,5 +165,45 @@ export class SteemApiService {
 
   getRpc(): Rpc {
     return this.currentRpc;
+  }
+
+  private tryNextRpc(): boolean {
+    const currentIndex = DefaultRpcs.findIndex(rpc => rpc.uri === this.currentRpc.uri);
+    const nextIndex = (currentIndex + 1) % DefaultRpcs.length;
+    
+    // Don't switch to the same RPC
+    if (nextIndex === currentIndex) {
+      return false;
+    }
+    
+    const nextRpc = DefaultRpcs[nextIndex];
+    Logger.log(`Switching from ${this.currentRpc.uri} to ${nextRpc.uri}`);
+    this.switchRpc(nextRpc);
+    return true;
+  }
+
+  private async retryApiCall<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+    maxRetries: number = 2
+  ): Promise<T> {
+    const retryDelay = 500; // 500ms
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        Logger.error(`${operationName} attempt ${attempt}/${maxRetries} failed:`, error);
+        
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+      }
+    }
+    
+    throw new Error(`${operationName} failed after ${maxRetries} attempts`);
   }
 }
