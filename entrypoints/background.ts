@@ -2,6 +2,8 @@ import { AuthService } from './background/services/auth.service';
 import { AccountService } from './background/services/account.service';
 import { SteemApiService } from './background/services/steem-api.service';
 import { KeyManagementService } from './background/services/key-management.service';
+import { TransactionService } from './background/services/transaction.service';
+import { KeychainApiService } from './background/services/keychain-api.service';
 import { SecureStorage } from './background/lib/storage';
 import { CryptoManager } from '../lib/crypto';
 import LocalStorageUtils from '../src/utils/localStorage.utils';
@@ -22,6 +24,8 @@ export default defineBackground(async () => {
   
   const keyManager = new KeyManagementService();
   const accountService = new AccountService(storage, steemApi, keyManager);
+  const transactionService = new TransactionService(steemApi, keyManager);
+  const keychainApiService = new KeychainApiService(accountService, steemApi, keyManager, transactionService);
 
   // Keychain API request handler
   async function handleKeychainRequest(message: any, sender: any, sendResponse: any) {
@@ -90,116 +94,14 @@ export default defineBackground(async () => {
       return;
     }
 
-    switch (type) {
-      case 'decode': {
-        // TODO: Implement message decoding/verification
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Message verification not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'custom': {
-        // TODO: Implement custom JSON operations
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Custom JSON operations not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'transfer': {
-        // TODO: Implement transfer operations
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Transfer operations not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'vote': {
-        // TODO: Implement vote operations
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Vote operations not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'broadcast': {
-        // TODO: Implement broadcast operations
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Broadcast operations not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'signTx': {
-        // TODO: Implement transaction signing
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Transaction signing not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      case 'encode': {
-        // TODO: Implement message encoding
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Not implemented',
-            message: 'Message encoding not yet implemented',
-            request_id
-          }
-        });
-        break;
-      }
-
-      default:
-        browser.tabs.sendMessage(sender.tab.id!, {
-          type: 'keychain_response',
-          response: {
-            success: false,
-            error: 'Unknown request type',
-            message: `Request type '${type}' is not supported`,
-            request_id
-          }
-        });
-    }
+    // Use the KeychainApiService to handle the request
+    const response = await keychainApiService.handleKeychainRequest(data);
+    
+    // Send response back to content script
+    browser.tabs.sendMessage(sender.tab.id!, {
+      type: 'keychain_response',
+      response
+    });
   }
 
   // Message handler
