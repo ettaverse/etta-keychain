@@ -2,38 +2,42 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SignService } from '../../../../background/services/keychain/sign.service';
 import { KeychainError } from '../../../../../src/keychain-error';
 
-vi.mock('../../../../background/services/auth.service', () => ({
-  AuthService: {
-    getInstance: () => ({
-      isAuthenticated: vi.fn().mockResolvedValue(true),
-      getCurrentAccount: vi.fn().mockResolvedValue({ username: 'testuser' })
-    })
-  }
-}));
-
-vi.mock('../../../../background/services/key-management.service', () => ({
-  KeyManagementService: {
-    getInstance: () => ({
-      getPrivateKey: vi.fn().mockResolvedValue('5KTestPrivateKey'),
-      validateKeyAccess: vi.fn().mockResolvedValue(true)
-    })
+vi.mock('../../../../../src/utils/localStorage.utils', () => ({
+  default: {
+    getValueFromSessionStorage: vi.fn().mockResolvedValue('mock-password')
   }
 }));
 
 vi.mock('../../../../../lib/crypto', () => ({
-  signBuffer: vi.fn().mockResolvedValue('signed_buffer_result'),
-  signTransaction: vi.fn().mockResolvedValue({
-    id: 'tx_id_123',
-    signatures: ['signature_123']
-  })
+  cryptoManager: {
+    signBuffer: vi.fn().mockResolvedValue('signed_buffer_result'),
+    signTransaction: vi.fn().mockResolvedValue({
+      id: 'tx_id_123',
+      signatures: ['signature_123']
+    })
+  }
 }));
 
 describe('SignService', () => {
   let service: SignService;
+  let mockAccountService: any;
+  let mockKeyManagementService: any;
 
-  beforeEach(() => {
-    service = new SignService();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    mockAccountService = {
+      getAccount: vi.fn().mockResolvedValue({
+        name: 'testuser',
+        keys: { posting: 'posting-key', active: 'active-key', memo: 'memo-key' }
+      }),
+      getActiveAccount: vi.fn().mockResolvedValue({ name: 'testuser' })
+    } as any;
+
+    mockKeyManagementService = {
+      getPrivateKey: vi.fn().mockResolvedValue('5KTestPrivateKey'),
+      validateKeyAccess: vi.fn().mockResolvedValue(true)
+    } as any;
+
+    service = new SignService(mockAccountService, mockKeyManagementService);
   });
 
   describe('handleSignBuffer', () => {
@@ -50,13 +54,17 @@ describe('SignService', () => {
 
       expect(result.success).toBe(true);
       expect(result.request_id).toBe(123);
-      expect(result.result).toBe('signed_buffer_result');
+      expect(result.result).toEqual({
+        signature: 'signed_buffer_result',
+        message: 'Hello World Buffer',
+        account: 'testuser',
+        method: 'posting'
+      });
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'signBuffer',
@@ -71,6 +79,9 @@ describe('SignService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(123);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -79,7 +90,7 @@ describe('SignService', () => {
         request_id: 123,
         username: 'testuser'
         // Missing message, method
-      };
+      } as any;
 
       const result = await service.handleSignBuffer(request);
 
@@ -89,14 +100,12 @@ describe('SignService', () => {
     });
 
     it('should fail when username mismatch occurs', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.getCurrentAccount).mockResolvedValue({ username: 'differentuser' });
+      mockAccountService.getAccount.mockResolvedValue(null);
 
       const request = {
         type: 'signBuffer',
         request_id: 123,
-        username: 'testuser',
+        username: 'wronguser',
         message: 'Hello World Buffer',
         method: 'posting'
       };
@@ -109,8 +118,8 @@ describe('SignService', () => {
     });
 
     it('should handle signing errors gracefully', async () => {
-      const { signBuffer } = await import('../../../../../lib/crypto');
-      vi.mocked(signBuffer).mockRejectedValue(new Error('Signing failed'));
+      const { cryptoManager } = await import('../../../../../lib/crypto');
+      vi.mocked(cryptoManager.signBuffer).mockRejectedValue(new Error('Signing failed'));
 
       const request = {
         type: 'signBuffer',
@@ -128,6 +137,10 @@ describe('SignService', () => {
     });
 
     it('should support different key methods', async () => {
+      // Reset the crypto mock for successful test
+      const { cryptoManager } = await import('../../../../../lib/crypto');
+      vi.mocked(cryptoManager.signBuffer).mockResolvedValue('signed_buffer_result');
+      
       const request = {
         type: 'signBuffer',
         request_id: 123,
@@ -140,7 +153,7 @@ describe('SignService', () => {
 
       expect(result.success).toBe(true);
       expect(result.request_id).toBe(123);
-      expect(result.result).toBe('signed_buffer_result');
+      expect(result.result.method).toBe('active');
     });
   });
 
@@ -151,10 +164,14 @@ describe('SignService', () => {
         request_id: 456,
         username: 'testuser',
         tx: {
-          operations: [['transfer', { from: 'testuser', to: 'receiver', amount: '1.000 STEEM', memo: '' }]],
-          extensions: []
+          ref_block_num: 12345,
+          ref_block_prefix: 987654321,
+          expiration: '2024-01-01T12:00:00',
+          operations: [
+            ['vote', { voter: 'testuser', author: 'author', permlink: 'permlink', weight: 10000 }]
+          ]
         },
-        method: 'active'
+        method: 'posting'
       };
 
       const result = await service.handleSignTx(request);
@@ -163,21 +180,27 @@ describe('SignService', () => {
       expect(result.request_id).toBe(456);
       expect(result.result).toEqual({
         id: 'tx_id_123',
-        signatures: ['signature_123']
+        signatures: ['signature_123'],
+        account: 'testuser',
+        method: 'posting'
       });
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'signTx',
         request_id: 456,
         username: 'testuser',
-        tx: { operations: [], extensions: [] },
-        method: 'active'
+        tx: {
+          ref_block_num: 12345,
+          ref_block_prefix: 987654321,
+          expiration: '2024-01-01T12:00:00',
+          operations: [['vote', {}]]
+        },
+        method: 'posting'
       };
 
       const result = await service.handleSignTx(request);
@@ -185,6 +208,9 @@ describe('SignService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(456);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -193,7 +219,7 @@ describe('SignService', () => {
         request_id: 456,
         username: 'testuser'
         // Missing tx, method
-      };
+      } as any;
 
       const result = await service.handleSignTx(request);
 
@@ -208,31 +234,34 @@ describe('SignService', () => {
         request_id: 456,
         username: 'testuser',
         tx: {
-          // Missing operations or extensions
+          // Missing required fields
+          operations: []
         },
-        method: 'active'
+        method: 'posting'
       };
 
       const result = await service.handleSignTx(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid transaction structure');
+      expect(result.error).toBe('Transaction must contain at least one operation');
       expect(result.request_id).toBe(456);
     });
 
     it('should handle transaction signing errors gracefully', async () => {
-      const { signTransaction } = await import('../../../../../lib/crypto');
-      vi.mocked(signTransaction).mockRejectedValue(new Error('Transaction signing failed'));
+      const { cryptoManager } = await import('../../../../../lib/crypto');
+      vi.mocked(cryptoManager.signTransaction).mockRejectedValue(new Error('Transaction signing failed'));
 
       const request = {
         type: 'signTx',
         request_id: 456,
         username: 'testuser',
         tx: {
-          operations: [['transfer', { from: 'testuser', to: 'receiver', amount: '1.000 STEEM', memo: '' }]],
-          extensions: []
+          ref_block_num: 12345,
+          ref_block_prefix: 987654321,
+          expiration: '2024-01-01T12:00:00',
+          operations: [['vote', {}]]
         },
-        method: 'active'
+        method: 'posting'
       };
 
       const result = await service.handleSignTx(request);
@@ -248,10 +277,12 @@ describe('SignService', () => {
         request_id: 456,
         username: 'testuser',
         tx: {
-          operations: [], // Empty operations
-          extensions: []
+          ref_block_num: 12345,
+          ref_block_prefix: 987654321,
+          expiration: '2024-01-01T12:00:00',
+          operations: [] // Empty operations array
         },
-        method: 'active'
+        method: 'posting'
       };
 
       const result = await service.handleSignTx(request);
@@ -262,25 +293,31 @@ describe('SignService', () => {
     });
 
     it('should support different key methods for transactions', async () => {
+      // Reset the crypto mock for successful test
+      const { cryptoManager } = await import('../../../../../lib/crypto');
+      vi.mocked(cryptoManager.signTransaction).mockResolvedValue({
+        id: 'tx_id_123',
+        signatures: ['signature_123']
+      });
+      
       const request = {
         type: 'signTx',
         request_id: 456,
         username: 'testuser',
         tx: {
-          operations: [['vote', { voter: 'testuser', author: 'author', permlink: 'permlink', weight: 10000 }]],
-          extensions: []
+          ref_block_num: 12345,
+          ref_block_prefix: 987654321,
+          expiration: '2024-01-01T12:00:00',
+          operations: [['transfer', {}]]
         },
-        method: 'posting'
+        method: 'active'
       };
 
       const result = await service.handleSignTx(request);
 
       expect(result.success).toBe(true);
       expect(result.request_id).toBe(456);
-      expect(result.result).toEqual({
-        id: 'tx_id_123',
-        signatures: ['signature_123']
-      });
+      expect(result.result.method).toBe('active');
     });
   });
 });

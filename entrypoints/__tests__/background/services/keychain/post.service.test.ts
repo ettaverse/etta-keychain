@@ -2,46 +2,40 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PostService } from '../../../../background/services/keychain/post.service';
 import { KeychainError } from '../../../../../src/keychain-error';
 
-vi.mock('../../../../background/services/auth.service', () => ({
-  AuthService: {
-    getInstance: () => ({
-      isAuthenticated: vi.fn().mockResolvedValue(true),
-      getCurrentAccount: vi.fn().mockResolvedValue({ username: 'testuser' })
-    })
-  }
-}));
-
-vi.mock('../../../../background/services/key-management.service', () => ({
-  KeyManagementService: {
-    getInstance: () => ({
-      getPrivateKey: vi.fn().mockResolvedValue('5KTestPrivateKey'),
-      validateKeyAccess: vi.fn().mockResolvedValue(true)
-    })
-  }
-}));
-
-vi.mock('../../../../background/services/steem-api.service', () => ({
-  SteemApiService: {
-    getInstance: () => ({
-      broadcastTransaction: vi.fn().mockResolvedValue({
-        id: 'tx_123',
-        block_num: 12345,
-        trx_num: 1
-      })
-    })
+vi.mock('../../../../../src/utils/localStorage.utils', () => ({
+  default: {
+    getValueFromSessionStorage: vi.fn().mockResolvedValue('mock-password')
   }
 }));
 
 describe('PostService', () => {
   let service: PostService;
+  let mockAccountService: any;
+  let mockTransactionService: any;
 
-  beforeEach(() => {
-    service = new PostService();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    mockAccountService = {
+      getAccount: vi.fn().mockResolvedValue({
+        name: 'testuser',
+        keys: { posting: 'posting-key', active: 'active-key' }
+      }),
+      getActiveAccount: vi.fn().mockResolvedValue({ name: 'testuser' })
+    } as any;
+
+    mockTransactionService = {
+      sendOperation: vi.fn().mockResolvedValue({
+        id: 'tx_123',
+        block_num: 12345,
+        trx_num: 1
+      })
+    } as any;
+
+    service = new PostService(mockAccountService, mockTransactionService);
   });
 
   describe('handlePost', () => {
     it('should successfully create a post', async () => {
+      
       const request = {
         type: 'post',
         request_id: 123,
@@ -67,6 +61,7 @@ describe('PostService', () => {
     });
 
     it('should successfully create a comment', async () => {
+      
       const request = {
         type: 'post',
         request_id: 123,
@@ -87,9 +82,8 @@ describe('PostService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'post',
@@ -109,6 +103,9 @@ describe('PostService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(123);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -117,7 +114,7 @@ describe('PostService', () => {
         request_id: 123,
         username: 'testuser'
         // Missing body, permlink
-      };
+      } as any;
 
       const result = await service.handlePost(request);
 
@@ -148,9 +145,8 @@ describe('PostService', () => {
     });
 
     it('should handle broadcast errors gracefully', async () => {
-      const { SteemApiService } = await import('../../../../background/services/steem-api.service');
-      const steemInstance = SteemApiService.getInstance();
-      vi.mocked(steemInstance.broadcastTransaction).mockRejectedValue(new Error('Post broadcast failed'));
+      
+      mockTransactionService.sendOperation.mockRejectedValue(new Error('Post broadcast failed'));
 
       const request = {
         type: 'post',
@@ -175,6 +171,7 @@ describe('PostService', () => {
 
   describe('handlePostWithBeneficiaries', () => {
     it('should successfully create a post with beneficiaries', async () => {
+      
       const request = {
         type: 'postWithBeneficiaries',
         request_id: 456,
@@ -203,9 +200,8 @@ describe('PostService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'postWithBeneficiaries',
@@ -225,6 +221,9 @@ describe('PostService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(456);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -235,7 +234,7 @@ describe('PostService', () => {
         title: 'Test Post',
         body: 'Test content'
         // Missing beneficiaries
-      };
+      } as any;
 
       const result = await service.handlePostWithBeneficiaries(request);
 

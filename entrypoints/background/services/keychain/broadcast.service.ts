@@ -8,8 +8,8 @@ import { KeychainResponse } from '../types/keychain-api.types';
 
 export class BroadcastService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handleBroadcast(request: any): Promise<KeychainResponse> {
@@ -31,6 +31,10 @@ export class BroadcastService {
       }
 
       const targetUsername = await this.resolveUsername(username, keychainPassword);
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(targetUsername, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -45,6 +49,10 @@ export class BroadcastService {
         type: method.toLowerCase() as 'active' | 'posting' | 'memo',
         value: privateKey
       };
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // Broadcast operations using TransactionService
       Logger.info(`Broadcasting ${operations.length} operations for ${targetUsername} with ${method.toLowerCase()} key`);
@@ -79,11 +87,15 @@ export class BroadcastService {
   private async resolveUsername(username: string | undefined, keychainPassword: string): Promise<string> {
     if (username) return username;
     
+    if (!this.accountService) {
+      throw new KeychainError('Account service not available');
+    }
+
     const activeAccount = await this.accountService.getActiveAccount(keychainPassword);
     if (!activeAccount) {
       throw new KeychainError('No active account found');
     }
-    return activeAccount.name;
+    return activeAccount.name || '';
   }
 
   private getPrivateKeyByMethod(account: any, method: string): string {

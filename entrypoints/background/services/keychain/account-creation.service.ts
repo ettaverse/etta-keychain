@@ -8,8 +8,8 @@ import { KeychainResponse, AuthorityObject } from '../types/keychain-api.types';
 
 export class AccountCreationService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handleCreateClaimedAccount(request: any): Promise<KeychainResponse> {
@@ -39,6 +39,10 @@ export class AccountCreationService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -51,6 +55,10 @@ export class AccountCreationService {
       this.validateAccountName(new_account);
       this.validateAuthorities({ owner, active, posting });
       this.validateMemoKey(memo);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual account creation using TransactionService
       // This would create a create_claimed_account operation

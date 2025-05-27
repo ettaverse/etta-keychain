@@ -8,7 +8,7 @@ import { KeychainResponse } from '../types/keychain-api.types';
 export class AccountManagementService {
   private readonly validKeys = ['active', 'posting', 'memo', 'owner'];
 
-  constructor(private accountService: AccountService) {}
+  constructor(private accountService?: AccountService) {}
 
   async handleAddAccount(request: any): Promise<KeychainResponse> {
     const { username, keys, request_id } = request;

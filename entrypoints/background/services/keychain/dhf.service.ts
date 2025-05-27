@@ -8,8 +8,8 @@ import { KeychainResponse } from '../types/keychain-api.types';
 
 export class DHFService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handleCreateProposal(request: any): Promise<KeychainResponse> {
@@ -41,6 +41,10 @@ export class DHFService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -54,6 +58,10 @@ export class DHFService {
       this.validateDailyPay(daily_pay);
 
       const processedExtensions = this.processExtensions(extensions);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual DHF proposal creation using TransactionService
       // This would create a create_proposal operation
@@ -102,6 +110,10 @@ export class DHFService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -113,6 +125,10 @@ export class DHFService {
 
       const processedProposalIds = this.processProposalIds(proposal_ids);
       const processedExtensions = this.processExtensions(extensions);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual DHF proposal removal using TransactionService
       // This would create a remove_proposal operation
@@ -156,6 +172,10 @@ export class DHFService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -167,6 +187,10 @@ export class DHFService {
 
       const processedProposalIds = this.processProposalIds(proposal_ids);
       const processedExtensions = this.processExtensions(extensions);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual DHF proposal vote using TransactionService
       // This would create an update_proposal_votes operation

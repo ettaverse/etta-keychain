@@ -1,76 +1,118 @@
-import { AccountService } from '../account.service';
-import { TransactionService } from '../transaction.service';
-import Logger from '../../../../src/utils/logger.utils';
-import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
-import { LocalStorageKeyEnum } from '../../../../src/reference-data/local-storage-key.enum';
-import { KeychainError } from '../../../../src/keychain-error';
+import { BaseKeychainService } from './base-keychain.service';
 import { KeychainResponse } from '../types/keychain-api.types';
+import Logger from '../../../../src/utils/logger.utils';
 
-export class WitnessService {
-  constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
-  ) {}
-
+export class WitnessService extends BaseKeychainService {
   async handleWitnessVote(request: any): Promise<KeychainResponse> {
     const { username, witness, vote, rpc, request_id } = request;
 
-    if (!witness || vote === undefined) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'witness and vote (boolean) are required',
-        request_id
-      };
-    }
+    // Parameter validation
+    const voteValidation = this.validateWitnessVote(witness, vote, request_id);
+    if (voteValidation) return voteValidation;
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
       }
 
-      const targetUsername = await this.resolveUsername(username, keychainPassword);
-      const account = await this.accountService.getAccount(targetUsername, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
+      // Resolve username
+      const usernameResult = await this.resolveUsername(username, keychainPassword, request_id);
+      if (typeof usernameResult !== 'string') return usernameResult;
+      const targetUsername = usernameResult;
 
+      // Get account
+      const accountResult = await this.getAccountWithValidation(targetUsername, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
+
+      // Validate active key
       if (!account.keys.active) {
-        throw new KeychainError('Active key not available for this account');
+        return this.createErrorResponse('Active key not available for this account', request_id);
       }
 
-      // TODO: Implement actual witness vote using TransactionService
-      // This would create an account_witness_vote operation
+      // Create witness vote operation
+      const operation = ['account_witness_vote', {
+        account: targetUsername,
+        witness,
+        approve: vote
+      }];
+
       Logger.info(`${vote ? 'Voting for' : 'Unvoting'} witness ${witness} by ${targetUsername}`);
 
-      return {
-        success: true,
-        result: {
-          account: targetUsername,
-          witness,
-          vote,
-          message: `Witness ${vote ? 'vote' : 'unvote'} successful`
-        },
-        request_id
-      };
+      const result = await this.transactionService.sendOperation(
+        [operation as any],
+        { type: 'active', value: account.keys.active },
+        false
+      );
+
+      return this.createSuccessResponse(result, request_id);
     } catch (error) {
-      Logger.error('Witness vote error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Witness vote failed',
-        request_id
-      };
+      return this.handleError(error, 'vote for witness', request_id);
     }
   }
 
-  private async resolveUsername(username: string | undefined, keychainPassword: string): Promise<string> {
-    if (username) return username;
-    
-    const activeAccount = await this.accountService.getActiveAccount(keychainPassword);
-    if (!activeAccount) {
-      throw new KeychainError('No active account found');
+  async handleWitnessProxy(request: any): Promise<KeychainResponse> {
+    const { username, proxy, rpc, request_id } = request;
+
+    // Parameter validation
+    if (proxy === undefined) {
+      return this.createErrorResponse('Missing required parameters: proxy', request_id, 'proxy is required');
     }
-    return activeAccount.name;
+
+    try {
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
+      }
+
+      // Resolve username
+      const usernameResult = await this.resolveUsername(username, keychainPassword, request_id);
+      if (typeof usernameResult !== 'string') return usernameResult;
+      const targetUsername = usernameResult;
+
+      // Check for self-proxy
+      if (proxy === targetUsername) {
+        return this.createErrorResponse('Cannot set yourself as witness proxy', request_id);
+      }
+
+      // Get account
+      const accountResult = await this.getAccountWithValidation(targetUsername, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
+
+      // Validate active key
+      if (!account.keys.active) {
+        return this.createErrorResponse('Active key not available for this account', request_id);
+      }
+
+      // Create witness proxy operation
+      const operation = ['account_witness_proxy', {
+        account: targetUsername,
+        proxy: proxy === '' ? '' : proxy
+      }];
+
+      Logger.info(`Setting witness proxy ${proxy} for ${targetUsername}`);
+
+      const result = await this.transactionService.sendOperation(
+        [operation as any],
+        { type: 'active', value: account.keys.active },
+        false
+      );
+
+      return this.createSuccessResponse(result, request_id);
+    } catch (error) {
+      return this.handleError(error, 'set witness proxy', request_id);
+    }
   }
 }

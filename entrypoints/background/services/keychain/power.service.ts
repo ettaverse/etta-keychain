@@ -8,8 +8,8 @@ import { KeychainResponse } from '../types/keychain-api.types';
 
 export class PowerService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handlePowerUp(request: any): Promise<KeychainResponse> {
@@ -30,6 +30,10 @@ export class PowerService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -40,6 +44,10 @@ export class PowerService {
       }
 
       this.validateAmount(steem, 'STEEM');
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual power up using TransactionService
       // This would create a transfer_to_vesting operation
@@ -83,6 +91,10 @@ export class PowerService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -93,6 +105,10 @@ export class PowerService {
       }
 
       this.validateAmount(steem_power, 'STEEM');
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual power down using TransactionService
       // This would create a withdraw_vesting operation
@@ -136,6 +152,10 @@ export class PowerService {
       }
 
       const targetUsername = await this.resolveUsername(username, keychainPassword);
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(targetUsername, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -147,6 +167,10 @@ export class PowerService {
 
       this.validateDelegationUnit(unit);
       this.validateAmount(amount, unit);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual delegation using TransactionService
       // This would create a delegate_vesting_shares operation
@@ -176,11 +200,15 @@ export class PowerService {
   private async resolveUsername(username: string | undefined, keychainPassword: string): Promise<string> {
     if (username) return username;
     
+    if (!this.accountService) {
+      throw new KeychainError('Account service not available');
+    }
+
     const activeAccount = await this.accountService.getActiveAccount(keychainPassword);
     if (!activeAccount) {
       throw new KeychainError('No active account found');
     }
-    return activeAccount.name;
+    return activeAccount.name || '';
   }
 
   private validateAmount(amount: string, currency: string): void {

@@ -1,17 +1,8 @@
-import { AccountService } from '../account.service';
-import { TransactionService } from '../transaction.service';
-import Logger from '../../../../src/utils/logger.utils';
-import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
-import { LocalStorageKeyEnum } from '../../../../src/reference-data/local-storage-key.enum';
-import { KeychainError } from '../../../../src/keychain-error';
+import { BaseKeychainService } from './base-keychain.service';
 import { KeychainResponse } from '../types/keychain-api.types';
+import Logger from '../../../../src/utils/logger.utils';
 
-export class PostService {
-  constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
-  ) {}
-
+export class PostService extends BaseKeychainService {
   async handlePost(request: any): Promise<KeychainResponse> {
     const { 
       username, 
@@ -26,30 +17,36 @@ export class PostService {
       request_id 
     } = request;
 
-    if (!username || !body || !parent_perm) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'username, body, and parent_perm are required',
-        request_id
-      };
-    }
+    // Parameter validation
+    const paramValidation = this.validateRequiredParams({ body, permlink }, ['body', 'permlink'], request_id);
+    if (paramValidation) return paramValidation;
+
+    // Validate permlink format
+    const permlinkValidation = this.validatePermlink(permlink, request_id);
+    if (permlinkValidation) return permlinkValidation;
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
       }
 
-      const account = await this.accountService.getAccount(username, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
+      // Get account
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
 
+      // Validate posting key
       if (!account.keys.posting) {
-        throw new KeychainError('Posting key not available for this account');
+        return this.createErrorResponse('Posting key not available for this account', request_id);
       }
 
+      // Process post data
       const postData = this.processPostData({
         username,
         title,
@@ -60,31 +57,90 @@ export class PostService {
         permlink
       });
 
-      // TODO: Implement actual post/comment creation using TransactionService
-      Logger.info(`Creating ${postData.isRootPost ? 'post' : 'comment'}: ${username}/${postData.permlink}`);
+      // Create comment operation
+      const operation = [
+        'comment',
+        {
+          parent_author: postData.parent_author,
+          parent_permlink: postData.parent_permlink,
+          author: postData.author,
+          permlink: postData.permlink,
+          title: postData.title,
+          body: postData.body,
+          json_metadata: JSON.stringify(postData.json_metadata)
+        }
+      ];
 
-      const result = {
-        ...postData,
-        message: `${postData.isRootPost ? 'Post' : 'Comment'} created successfully`
-      };
+      const result = await this.transactionService.sendOperation(
+        [operation as any],
+        { type: 'posting', value: account.keys.posting },
+        false
+      );
 
-      if (comment_options) {
-        Logger.info('Comment options provided:', comment_options);
-        result.comment_options = comment_options;
+      return this.createSuccessResponse(result, request_id);
+    } catch (error) {
+      return this.handleError(error, 'create post', request_id);
+    }
+  }
+
+  async handlePostWithBeneficiaries(request: any): Promise<KeychainResponse> {
+    const { 
+      username,
+      title,
+      body,
+      parent_perm,
+      parent_username,
+      json_metadata,
+      permlink,
+      beneficiaries,
+      request_id 
+    } = request;
+
+    Logger.info('Processing post with beneficiaries:', { request_id });
+
+    // Validate beneficiaries
+    const beneficiaryValidation = this.validateBeneficiaries(beneficiaries, request_id);
+    if (beneficiaryValidation) return beneficiaryValidation;
+
+    try {
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
       }
 
-      return {
-        success: true,
-        result,
-        request_id
-      };
+      // Get account
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
+
+      // Validate posting key
+      if (!account.keys.posting) {
+        return this.createErrorResponse('Posting key not available for this account', request_id);
+      }
+
+      // Create post with beneficiaries
+      const result = await this.transactionService.sendOperation(
+        [['comment', {
+          parent_author: parent_username || '',
+          parent_permlink: parent_perm || '',
+          author: username,
+          permlink,
+          title: title || '',
+          body,
+          json_metadata: JSON.stringify(json_metadata || {})
+        }] as any],
+        { type: 'posting', value: account.keys.posting },
+        false
+      );
+
+      return this.createSuccessResponse(result, request_id);
     } catch (error) {
-      Logger.error('Post creation error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create post',
-        request_id
-      };
+      return this.handleError(error, 'create post with beneficiaries', request_id);
     }
   }
 

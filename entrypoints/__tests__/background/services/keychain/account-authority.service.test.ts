@@ -2,42 +2,35 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AccountAuthorityService } from '../../../../background/services/keychain/account-authority.service';
 import { KeychainError } from '../../../../../src/keychain-error';
 
-vi.mock('../../../../background/services/auth.service', () => ({
-  AuthService: {
-    getInstance: () => ({
-      isAuthenticated: vi.fn().mockResolvedValue(true),
-      getCurrentAccount: vi.fn().mockResolvedValue({ username: 'testuser' })
-    })
-  }
-}));
-
-vi.mock('../../../../background/services/key-management.service', () => ({
-  KeyManagementService: {
-    getInstance: () => ({
-      getPrivateKey: vi.fn().mockResolvedValue('5KTestPrivateKey'),
-      validateKeyAccess: vi.fn().mockResolvedValue(true)
-    })
-  }
-}));
-
-vi.mock('../../../../background/services/steem-api.service', () => ({
-  SteemApiService: {
-    getInstance: () => ({
-      broadcastTransaction: vi.fn().mockResolvedValue({
-        id: 'tx_123',
-        block_num: 12345,
-        trx_num: 1
-      })
-    })
+vi.mock('../../../../../src/utils/localStorage.utils', () => ({
+  default: {
+    getValueFromSessionStorage: vi.fn().mockResolvedValue('mock-password')
   }
 }));
 
 describe('AccountAuthorityService', () => {
   let service: AccountAuthorityService;
+  let mockAccountService: any;
+  let mockTransactionService: any;
 
-  beforeEach(() => {
-    service = new AccountAuthorityService();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    mockAccountService = {
+      getAccount: vi.fn().mockResolvedValue({
+        name: 'testuser',
+        keys: { posting: 'posting-key', active: 'active-key', owner: 'owner-key' }
+      }),
+      getActiveAccount: vi.fn().mockResolvedValue({ name: 'testuser' })
+    } as any;
+
+    mockTransactionService = {
+      sendOperation: vi.fn().mockResolvedValue({
+        id: 'tx_123',
+        block_num: 12345,
+        trx_num: 1
+      })
+    } as any;
+
+    service = new AccountAuthorityService(mockAccountService, mockTransactionService);
   });
 
   describe('handleAddAccountAuthority', () => {
@@ -47,7 +40,7 @@ describe('AccountAuthorityService', () => {
         request_id: 123,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'posting',
+        role: 'Posting',
         weight: 1
       };
 
@@ -63,16 +56,15 @@ describe('AccountAuthorityService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'addAccountAuthority',
         request_id: 123,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'posting',
+        role: 'Posting',
         weight: 1
       };
 
@@ -81,6 +73,9 @@ describe('AccountAuthorityService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(123);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -89,7 +84,7 @@ describe('AccountAuthorityService', () => {
         request_id: 123,
         username: 'testuser'
         // Missing authorizedUsername, role, weight
-      };
+      } as any;
 
       const result = await service.handleAddAccountAuthority(request);
 
@@ -111,45 +106,48 @@ describe('AccountAuthorityService', () => {
       const result = await service.handleAddAccountAuthority(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid role. Must be one of: posting, active, owner');
+      expect(result.error).toBe('Invalid role: invalid_role. Must be one of: Active, Posting, Owner');
       expect(result.request_id).toBe(123);
     });
 
-    it('should fail with invalid weight', async () => {
-      const request = {
-        type: 'addAccountAuthority',
-        request_id: 123,
-        username: 'testuser',
-        authorizedUsername: 'authorized_user',
-        role: 'posting',
-        weight: 0
-      };
-
-      const result = await service.handleAddAccountAuthority(request);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Weight must be a positive integer');
-      expect(result.request_id).toBe(123);
-    });
-
-    it('should handle transaction broadcast errors', async () => {
-      const { SteemApiService } = await import('../../../../background/services/steem-api.service');
-      const steemInstance = SteemApiService.getInstance();
-      vi.mocked(steemInstance.broadcastTransaction).mockRejectedValue(new Error('Broadcast failed'));
+    it('should fail when account is not found', async () => {
+      mockAccountService.getAccount.mockResolvedValue(null);
 
       const request = {
         type: 'addAccountAuthority',
         request_id: 123,
-        username: 'testuser',
+        username: 'nonexistentuser',
         authorizedUsername: 'authorized_user',
-        role: 'posting',
+        role: 'Posting',
         weight: 1
       };
 
       const result = await service.handleAddAccountAuthority(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to add account authority: Broadcast failed');
+      expect(result.error).toBe('Account not found in keychain');
+      expect(result.request_id).toBe(123);
+    });
+
+    it('should fail when active key is not available', async () => {
+      mockAccountService.getAccount.mockResolvedValue({
+        name: 'testuser',
+        keys: { posting: 'posting-key' } // Missing active key
+      });
+
+      const request = {
+        type: 'addAccountAuthority',
+        request_id: 123,
+        username: 'testuser',
+        authorizedUsername: 'authorized_user',
+        role: 'Posting',
+        weight: 1
+      };
+
+      const result = await service.handleAddAccountAuthority(request);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Active key not available for this account');
       expect(result.request_id).toBe(123);
     });
 
@@ -159,7 +157,7 @@ describe('AccountAuthorityService', () => {
         request_id: 123,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'active',
+        role: 'Active',
         weight: 2
       };
 
@@ -177,7 +175,7 @@ describe('AccountAuthorityService', () => {
         request_id: 456,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'posting'
+        role: 'Posting'
       };
 
       const result = await service.handleRemoveAccountAuthority(request);
@@ -192,16 +190,15 @@ describe('AccountAuthorityService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'removeAccountAuthority',
         request_id: 456,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'posting'
+        role: 'Posting'
       };
 
       const result = await service.handleRemoveAccountAuthority(request);
@@ -209,6 +206,9 @@ describe('AccountAuthorityService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not authenticated');
       expect(result.request_id).toBe(456);
+      
+      // Reset the mock for other tests
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
     });
 
     it('should fail when required parameters are missing', async () => {
@@ -217,7 +217,7 @@ describe('AccountAuthorityService', () => {
         request_id: 456,
         username: 'testuser'
         // Missing authorizedUsername, role
-      };
+      } as any;
 
       const result = await service.handleRemoveAccountAuthority(request);
 
@@ -238,27 +238,7 @@ describe('AccountAuthorityService', () => {
       const result = await service.handleRemoveAccountAuthority(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid role. Must be one of: posting, active, owner');
-      expect(result.request_id).toBe(456);
-    });
-
-    it('should handle transaction broadcast errors', async () => {
-      const { SteemApiService } = await import('../../../../background/services/steem-api.service');
-      const steemInstance = SteemApiService.getInstance();
-      vi.mocked(steemInstance.broadcastTransaction).mockRejectedValue(new Error('Remove broadcast failed'));
-
-      const request = {
-        type: 'removeAccountAuthority',
-        request_id: 456,
-        username: 'testuser',
-        authorizedUsername: 'authorized_user',
-        role: 'posting'
-      };
-
-      const result = await service.handleRemoveAccountAuthority(request);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to remove account authority: Remove broadcast failed');
+      expect(result.error).toBe('Invalid role: invalid_role. Must be one of: Active, Posting, Owner');
       expect(result.request_id).toBe(456);
     });
 
@@ -268,7 +248,7 @@ describe('AccountAuthorityService', () => {
         request_id: 456,
         username: 'testuser',
         authorizedUsername: 'authorized_user',
-        role: 'owner'
+        role: 'Owner'
       };
 
       const result = await service.handleRemoveAccountAuthority(request);

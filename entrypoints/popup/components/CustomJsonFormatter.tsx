@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +112,7 @@ export function CustomJsonFormatter({
       })()
     : request.json;
 
-  const formatJsonValue = (value: any, depth = 0): JSX.Element => {
+  const formatJsonValue = (value: any, depth = 0): ReactNode => {
     if (depth > 3) return <span className="text-gray-500">...</span>;
 
     if (value === null) return <span className="text-gray-500">null</span>;

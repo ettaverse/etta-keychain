@@ -1,90 +1,85 @@
 import { AccountService } from '../account.service';
-import { KeyManagementService } from '../key-management.service';
-import Logger from '../../../../src/utils/logger.utils';
-import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
-import { LocalStorageKeyEnum } from '../../../../src/reference-data/local-storage-key.enum';
-import { KeychainError } from '../../../../src/keychain-error';
+import { TransactionService } from '../transaction.service';
 import { KeychainResponse } from '../types/keychain-api.types';
+import { BaseKeychainService } from './base-keychain.service';
 
-export class EncodeService {
+export class EncodeService extends BaseKeychainService {
   constructor(
-    private accountService: AccountService,
-    private keyManagementService: KeyManagementService
-  ) {}
+    accountService?: AccountService,
+    transactionService?: TransactionService
+  ) {
+    super(accountService, transactionService);
+  }
 
   async handleEncodeMessage(request: any): Promise<KeychainResponse> {
     const { username, receiver, message, method, request_id } = request;
 
-    if (!username || !receiver || !message || !method) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'username, receiver, message, and method are required',
-        request_id
-      };
-    }
+    // Validate required parameters
+    const paramValidation = this.validateRequiredParams(
+      { username, receiver, message, method },
+      ['username', 'receiver', 'message', 'method'],
+      request_id
+    );
+    if (paramValidation) return paramValidation;
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
-      }
+      // Validate authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
 
-      const account = await this.accountService.getAccount(username, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
+      // Get account with validation
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult && !accountResult.success) return accountResult;
+      const account = accountResult;
 
-      const privateKey = this.getPrivateKeyByMethod(account, method);
-      if (!privateKey) {
-        throw new KeychainError(`${method} key not available for this account`);
-      }
+      // Get private key
+      const keyResult = this.getPrivateKeyByMethod(account, method, request_id);
+      if (typeof keyResult !== 'string') return keyResult;
 
       // TODO: Implement actual message encoding/encryption
       const encodedMessage = `[ENCODED]${message}[/ENCODED]`;
 
-      return {
-        success: true,
-        result: encodedMessage,
-        request_id
-      };
+      return this.createSuccessResponse(encodedMessage, request_id);
     } catch (error) {
-      Logger.error('Encode message error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Message encoding failed',
-        request_id
-      };
+      return this.handleError(error, 'encode message', request_id);
     }
   }
 
   async handleEncodeWithKeys(request: any): Promise<KeychainResponse> {
     const { username, publicKeys, message, method, request_id } = request;
 
-    if (!username || !publicKeys || !Array.isArray(publicKeys) || !message || !method) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'username, publicKeys (array), message, and method are required',
-        request_id
-      };
+    // Validate required parameters
+    const paramValidation = this.validateRequiredParams(
+      { username, publicKeys, message, method },
+      ['username', 'publicKeys', 'message', 'method'],
+      request_id
+    );
+    if (paramValidation) return paramValidation;
+
+    // Validate publicKeys is an array
+    if (!Array.isArray(publicKeys)) {
+      return this.createErrorResponse(
+        'publicKeys must be an array',
+        request_id,
+        'publicKeys parameter must be an array'
+      );
     }
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
-      }
+      // Validate authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
 
-      const account = await this.accountService.getAccount(username, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
+      // Get account with validation
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult && !accountResult.success) return accountResult;
+      const account = accountResult;
 
-      const privateKey = this.getPrivateKeyByMethod(account, method);
-      if (!privateKey) {
-        throw new KeychainError(`${method} key not available for this account`);
-      }
+      // Get private key
+      const keyResult = this.getPrivateKeyByMethod(account, method, request_id);
+      if (typeof keyResult !== 'string') return keyResult;
 
       // TODO: Implement actual message encoding for multiple public keys
       const encodedMessages = publicKeys.map((publicKey: string) => ({
@@ -92,32 +87,10 @@ export class EncodeService {
         message: `[ENCODED:${publicKey}]${message}[/ENCODED:${publicKey}]`
       }));
 
-      return {
-        success: true,
-        result: encodedMessages,
-        request_id
-      };
+      return this.createSuccessResponse(encodedMessages, request_id);
     } catch (error) {
-      Logger.error('Encode with keys error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Message encoding failed',
-        request_id
-      };
+      return this.handleError(error, 'encode message with keys', request_id);
     }
   }
 
-  private getPrivateKeyByMethod(account: any, method: string): string | undefined {
-    const keyType = method.toLowerCase();
-    switch (keyType) {
-      case 'posting':
-        return account.keys.posting;
-      case 'active':
-        return account.keys.active;
-      case 'memo':
-        return account.keys.memo;
-      default:
-        throw new KeychainError(`Invalid key type: ${method}`);
-    }
-  }
 }

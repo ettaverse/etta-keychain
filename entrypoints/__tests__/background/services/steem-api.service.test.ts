@@ -36,7 +36,7 @@ describe('SteemApiService', () => {
     });
 
     it('should throw error when account not found', async () => {
-      vi.mocked(call).mockRejectedValueOnce(new Error('Account not found'));
+      vi.mocked(call).mockRejectedValue(new Error('Account not found'));
 
       await expect(service.getAccount('nonexistent')).rejects.toThrow('Account not found');
     });

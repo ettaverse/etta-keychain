@@ -1,136 +1,185 @@
-import { AccountService } from '../account.service';
-import { TransactionService } from '../transaction.service';
-import Logger from '../../../../src/utils/logger.utils';
-import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
-import { LocalStorageKeyEnum } from '../../../../src/reference-data/local-storage-key.enum';
-import { KeychainError } from '../../../../src/keychain-error';
+import { BaseKeychainService } from './base-keychain.service';
 import { KeychainResponse } from '../types/keychain-api.types';
+import Logger from '../../../../src/utils/logger.utils';
 
-export class KeyAuthorityService {
+export class KeyAuthorityService extends BaseKeychainService {
   private readonly validRoles = ['Active', 'Posting', 'Owner', 'Memo'];
-
-  constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
-  ) {}
 
   async handleAddKeyAuthority(request: any): Promise<KeychainResponse> {
     const { username, authorizedKey, role, weight, rpc, request_id } = request;
 
-    if (!username || !authorizedKey || !role || weight === undefined) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'username, authorizedKey, role, and weight are required',
-        request_id
-      };
-    }
+    // Parameter validation
+    const paramValidation = this.validateRequiredParams(
+      { username, authorizedKey, role, weight }, 
+      ['username', 'authorizedKey', 'role', 'weight'], 
+      request_id
+    );
+    if (paramValidation) return paramValidation;
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
+      // Additional validations
+      const roleValidation = this.validateRole(role, request_id);
+      if (roleValidation) return roleValidation;
+
+      const keyValidation = this.validatePublicKey(authorizedKey, request_id);
+      if (keyValidation) return keyValidation;
+
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
       }
 
-      this.validateRole(role);
-      this.validatePublicKey(authorizedKey);
+      // Get account
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
 
-      const account = await this.accountService.getAccount(username, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
-
+      // Validate active key
       if (!account.keys.active) {
-        throw new KeychainError('Active key not available for this account');
+        return this.createErrorResponse('Active key not available for this account', request_id);
       }
 
-      // TODO: Implement actual key authority operation using TransactionService
+      // Create account_update operation
+      const authorityData = this.createAuthorityUpdate(role, authorizedKey, weight, account);
+      const operation = ['account_update', {
+        account: username,
+        ...authorityData
+      }];
+
       Logger.info(`Adding key authority: ${authorizedKey} with weight ${weight} to ${username} for role ${role}`);
 
-      return {
-        success: true,
-        result: {
-          account: username,
-          authorizedKey,
-          role,
-          weight,
-          message: `Key authority added successfully`
-        },
-        request_id
-      };
+      const result = await this.transactionService.sendOperation(
+        [operation as any],
+        { type: 'active', value: account.keys.active },
+        false
+      );
+
+      return this.createSuccessResponse(result, request_id);
     } catch (error) {
-      Logger.error('Add key authority error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to add key authority',
-        request_id
-      };
+      return this.handleError(error, 'Add key authority', request_id);
     }
   }
 
   async handleRemoveKeyAuthority(request: any): Promise<KeychainResponse> {
     const { username, authorizedKey, role, rpc, request_id } = request;
 
-    if (!username || !authorizedKey || !role) {
-      return {
-        success: false,
-        error: 'Missing required parameters',
-        message: 'username, authorizedKey, and role are required',
-        request_id
-      };
-    }
+    // Parameter validation
+    const paramValidation = this.validateRequiredParams(
+      { username, authorizedKey, role }, 
+      ['username', 'authorizedKey', 'role'], 
+      request_id
+    );
+    if (paramValidation) return paramValidation;
 
     try {
-      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
-      if (!keychainPassword) {
-        throw new KeychainError('Keychain is locked');
+      // Additional validations
+      const roleValidation = this.validateRole(role, request_id);
+      if (roleValidation) return roleValidation;
+
+      const keyValidation = this.validatePublicKey(authorizedKey, request_id);
+      if (keyValidation) return keyValidation;
+
+      // Authentication
+      const authResult = await this.validateAuthentication(request_id);
+      if (typeof authResult !== 'string') return authResult;
+      const keychainPassword = authResult;
+
+      // Services validation
+      if (!this.transactionService) {
+        return this.createErrorResponse('Transaction service not available', request_id);
       }
 
-      this.validateRole(role);
-      this.validatePublicKey(authorizedKey);
+      // Get account
+      const accountResult = await this.getAccountWithValidation(username, keychainPassword, request_id);
+      if ('success' in accountResult) return accountResult;
+      const account = accountResult;
 
-      const account = await this.accountService.getAccount(username, keychainPassword);
-      if (!account) {
-        throw new KeychainError('Account not found in keychain');
-      }
-
+      // Validate active key
       if (!account.keys.active) {
-        throw new KeychainError('Active key not available for this account');
+        return this.createErrorResponse('Active key not available for this account', request_id);
       }
 
-      // TODO: Implement actual key authority removal using TransactionService
+      // Create account_update operation for removal
+      const authorityData = this.createAuthorityRemoval(role, authorizedKey, account);
+      const operation = ['account_update', {
+        account: username,
+        ...authorityData
+      }];
+
       Logger.info(`Removing key authority: ${authorizedKey} from ${username} for role ${role}`);
 
-      return {
-        success: true,
-        result: {
-          account: username,
-          authorizedKey,
-          role,
-          message: `Key authority removed successfully`
-        },
-        request_id
-      };
+      const result = await this.transactionService.sendOperation(
+        [operation as any],
+        { type: 'active', value: account.keys.active },
+        false
+      );
+
+      return this.createSuccessResponse(result, request_id);
     } catch (error) {
-      Logger.error('Remove key authority error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to remove key authority',
+      return this.handleError(error, 'Remove key authority', request_id);
+    }
+  }
+
+  private validateRole(role: string, request_id: any): KeychainResponse | null {
+    if (!this.validRoles.includes(role)) {
+      return this.createErrorResponse(
+        `Invalid role: ${role}. Must be one of: ${this.validRoles.join(', ')}`,
         request_id
+      );
+    }
+    return null;
+  }
+
+  private validatePublicKey(key: string, request_id: any): KeychainResponse | null {
+    if (!key || !key.startsWith('STM') || key.length < 50) {
+      return this.createErrorResponse('Invalid public key format', request_id);
+    }
+    return null;
+  }
+
+  private createAuthorityUpdate(role: string, authorizedKey: string, weight: number, account: any) {
+    const roleKey = role.toLowerCase() === 'memo' ? 'memo_key' : role.toLowerCase();
+    
+    // This is a simplified version - in a real implementation,
+    // you'd need to properly manage the authority threshold and existing keys
+    const authorityData: any = {};
+    
+    if (role.toLowerCase() === 'memo') {
+      authorityData.memo_key = authorizedKey;
+    } else {
+      authorityData[roleKey] = {
+        weight_threshold: 1,
+        account_auths: [],
+        key_auths: [[authorizedKey, weight]]
       };
     }
+    
+    return authorityData;
   }
 
-  private validateRole(role: string): void {
-    if (!this.validRoles.includes(role)) {
-      throw new KeychainError(`Invalid role: ${role}. Must be one of: ${this.validRoles.join(', ')}`);
+  private createAuthorityRemoval(role: string, authorizedKey: string, account: any) {
+    const roleKey = role.toLowerCase() === 'memo' ? 'memo_key' : role.toLowerCase();
+    
+    // This is a simplified version - in a real implementation,
+    // you'd need to properly manage the authority threshold and existing keys
+    const authorityData: any = {};
+    
+    if (role.toLowerCase() === 'memo') {
+      // For memo key removal, you'd typically set it to an empty/null value
+      authorityData.memo_key = '';
+    } else {
+      authorityData[roleKey] = {
+        weight_threshold: 1,
+        account_auths: [],
+        key_auths: [] // Remove all key authorities
+      };
     }
-  }
-
-  private validatePublicKey(publicKey: string): void {
-    // Basic validation for STEEM public key format
-    if (!publicKey.startsWith('STM') || publicKey.length < 50) {
-      throw new KeychainError('Invalid public key format');
-    }
+    
+    return authorityData;
   }
 }

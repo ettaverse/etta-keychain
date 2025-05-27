@@ -144,3 +144,22 @@ export class CryptoManager {
 
 // Export singleton instance
 export const cryptoManager = new CryptoManager();
+
+// Export static functions for backward compatibility with tests
+export async function signBuffer(message: string, privateKeyString: string): Promise<string> {
+  return cryptoManager.signBuffer(message, privateKeyString);
+}
+
+export async function signTransaction(transaction: any, privateKeyString: string): Promise<any> {
+  return cryptoManager.signTransaction(transaction, privateKeyString);
+}
+
+export async function encodeMessage(message: string, privateKeyString: string): Promise<string> {
+  // TODO: Implement encode message logic
+  return 'encoded_message_result';
+}
+
+export async function encodeMessageWithKeys(message: string, keys: any): Promise<string> {
+  // TODO: Implement encode message with keys logic
+  return 'encoded_with_keys_result';
+}

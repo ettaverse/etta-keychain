@@ -1,35 +1,42 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EncodeService } from '../../../../background/services/keychain/encode.service';
+import { AccountService } from '../../../../background/services/account.service';
+import { TransactionService } from '../../../../background/services/transaction.service';
 import { KeychainError } from '../../../../../src/keychain-error';
 
-vi.mock('../../../../background/services/auth.service', () => ({
-  AuthService: {
-    getInstance: () => ({
-      isAuthenticated: vi.fn().mockResolvedValue(true),
-      getCurrentAccount: vi.fn().mockResolvedValue({ username: 'testuser' })
-    })
+vi.mock('../../../../../src/utils/localStorage.utils', () => ({
+  default: {
+    getValueFromSessionStorage: vi.fn().mockResolvedValue('mock-password')
   }
-}));
-
-vi.mock('../../../../background/services/key-management.service', () => ({
-  KeyManagementService: {
-    getInstance: () => ({
-      getPrivateKey: vi.fn().mockResolvedValue('5KTestPrivateKey'),
-      validateKeyAccess: vi.fn().mockResolvedValue(true)
-    })
-  }
-}));
-
-vi.mock('../../../../../lib/crypto', () => ({
-  encodeMessage: vi.fn().mockResolvedValue('encoded_message_result'),
-  encodeMessageWithKeys: vi.fn().mockResolvedValue('encoded_with_keys_result')
 }));
 
 describe('EncodeService', () => {
   let service: EncodeService;
+  let mockAccountService: AccountService;
+  let mockTransactionService: TransactionService;
 
-  beforeEach(() => {
-    service = new EncodeService();
+  beforeEach(async () => {
+    // Reset localStorage mock to default authenticated state
+    const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+    vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
+
+    mockAccountService = {
+      getAccount: vi.fn().mockResolvedValue({
+        name: 'testuser',
+        keys: { active: 'active-key', posting: 'posting-key', memo: 'memo-key' }
+      }),
+      getActiveAccount: vi.fn().mockResolvedValue({ name: 'testuser' })
+    } as any;
+
+    mockTransactionService = {
+      sendOperation: vi.fn().mockResolvedValue({
+        id: 'tx_123',
+        block_num: 12345,
+        trx_num: 1
+      })
+    } as any;
+
+    service = new EncodeService(mockAccountService, mockTransactionService);
     vi.clearAllMocks();
   });
 
@@ -48,13 +55,12 @@ describe('EncodeService', () => {
 
       expect(result.success).toBe(true);
       expect(result.request_id).toBe(123);
-      expect(result.result).toBe('encoded_message_result');
+      expect(result.result).toBe('[ENCODED]Hello World[/ENCODED]');
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'encode',
@@ -87,10 +93,8 @@ describe('EncodeService', () => {
       expect(result.request_id).toBe(123);
     });
 
-    it('should fail when username mismatch occurs', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.getCurrentAccount).mockResolvedValue({ username: 'differentuser' });
+    it('should fail when account is not found', async () => {
+      vi.mocked(mockAccountService.getAccount).mockResolvedValue(null);
 
       const request = {
         type: 'encode',
@@ -104,13 +108,32 @@ describe('EncodeService', () => {
       const result = await service.handleEncodeMessage(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Username mismatch');
+      expect(result.error).toBe('Account not found in keychain');
       expect(result.request_id).toBe(123);
     });
 
-    it('should handle encryption errors gracefully', async () => {
-      const { encodeMessage } = await import('../../../../../lib/crypto');
-      vi.mocked(encodeMessage).mockRejectedValue(new Error('Encryption failed'));
+    it('should fail when invalid key method is provided', async () => {
+      const request = {
+        type: 'encode',
+        request_id: 123,
+        username: 'testuser',
+        receiver: 'receiver123',
+        message: 'Hello World',
+        method: 'invalid'
+      };
+
+      const result = await service.handleEncodeMessage(request);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid key type: invalid');
+      expect(result.request_id).toBe(123);
+    });
+
+    it('should fail when key is not available', async () => {
+      vi.mocked(mockAccountService.getAccount).mockResolvedValue({
+        name: 'testuser',
+        keys: { active: 'active-key' } // missing posting key
+      });
 
       const request = {
         type: 'encode',
@@ -124,7 +147,7 @@ describe('EncodeService', () => {
       const result = await service.handleEncodeMessage(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to encode message: Encryption failed');
+      expect(result.error).toBe('posting key not available for this account');
       expect(result.request_id).toBe(123);
     });
   });
@@ -135,7 +158,6 @@ describe('EncodeService', () => {
         type: 'encodeWithKeys',
         request_id: 456,
         username: 'testuser',
-        receivers: ['receiver1', 'receiver2'],
         publicKeys: ['STM5TestKey1', 'STM5TestKey2'],
         message: 'Multi-recipient message',
         method: 'posting'
@@ -145,19 +167,22 @@ describe('EncodeService', () => {
 
       expect(result.success).toBe(true);
       expect(result.request_id).toBe(456);
-      expect(result.result).toBe('encoded_with_keys_result');
+      expect(Array.isArray(result.result)).toBe(true);
+      expect(result.result).toHaveLength(2);
+      expect(result.result[0]).toEqual({
+        publicKey: 'STM5TestKey1',
+        message: '[ENCODED:STM5TestKey1]Multi-recipient message[/ENCODED:STM5TestKey1]'
+      });
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'encodeWithKeys',
         request_id: 456,
         username: 'testuser',
-        receivers: ['receiver1'],
         publicKeys: ['STM5TestKey1'],
         message: 'Test message',
         method: 'posting'
@@ -175,23 +200,22 @@ describe('EncodeService', () => {
         type: 'encodeWithKeys',
         request_id: 456,
         username: 'testuser'
-        // Missing receivers, publicKeys, message, method
+        // Missing publicKeys, message, method
       };
 
       const result = await service.handleEncodeWithKeys(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Missing required parameters: receivers, publicKeys, message, method');
+      expect(result.error).toBe('Missing required parameters: publicKeys, message, method');
       expect(result.request_id).toBe(456);
     });
 
-    it('should fail when receivers and publicKeys arrays have different lengths', async () => {
+    it('should fail when publicKeys is not an array', async () => {
       const request = {
         type: 'encodeWithKeys',
         request_id: 456,
         username: 'testuser',
-        receivers: ['receiver1', 'receiver2'],
-        publicKeys: ['STM5TestKey1'], // Mismatch: 2 receivers, 1 key
+        publicKeys: 'not-an-array',
         message: 'Test message',
         method: 'posting'
       };
@@ -199,46 +223,7 @@ describe('EncodeService', () => {
       const result = await service.handleEncodeWithKeys(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Receivers and publicKeys arrays must have the same length');
-      expect(result.request_id).toBe(456);
-    });
-
-    it('should handle encryption errors gracefully', async () => {
-      const { encodeMessageWithKeys } = await import('../../../../../lib/crypto');
-      vi.mocked(encodeMessageWithKeys).mockRejectedValue(new Error('Multi-key encryption failed'));
-
-      const request = {
-        type: 'encodeWithKeys',
-        request_id: 456,
-        username: 'testuser',
-        receivers: ['receiver1'],
-        publicKeys: ['STM5TestKey1'],
-        message: 'Test message',
-        method: 'posting'
-      };
-
-      const result = await service.handleEncodeWithKeys(request);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to encode message with keys: Multi-key encryption failed');
-      expect(result.request_id).toBe(456);
-    });
-
-    it('should validate empty arrays', async () => {
-      const request = {
-        type: 'encodeWithKeys',
-        request_id: 456,
-        username: 'testuser',
-        receivers: [],
-        publicKeys: [],
-        message: 'Test message',
-        method: 'posting'
-      };
-
-      const result = await service.handleEncodeWithKeys(request);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Receivers and publicKeys arrays cannot be empty');
+      expect(result.error).toBe('publicKeys must be an array');
       expect(result.request_id).toBe(456);
     });
   });

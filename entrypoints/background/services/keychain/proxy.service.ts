@@ -8,8 +8,8 @@ import { KeychainResponse } from '../types/keychain-api.types';
 
 export class ProxyService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handleProxy(request: any): Promise<KeychainResponse> {
@@ -31,6 +31,10 @@ export class ProxyService {
       }
 
       const targetUsername = await this.resolveUsername(username, keychainPassword);
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(targetUsername, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -42,6 +46,10 @@ export class ProxyService {
 
       const isRemovingProxy = proxy === '';
       
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
+
       // TODO: Implement actual proxy operation using TransactionService
       // This would create an account_witness_proxy operation
       Logger.info(`${isRemovingProxy ? 'Removing proxy' : `Setting proxy to ${proxy}`} for ${targetUsername}`);
@@ -68,10 +76,14 @@ export class ProxyService {
   private async resolveUsername(username: string | undefined, keychainPassword: string): Promise<string> {
     if (username) return username;
     
+    if (!this.accountService) {
+      throw new KeychainError('Account service not available');
+    }
+
     const activeAccount = await this.accountService.getActiveAccount(keychainPassword);
     if (!activeAccount) {
       throw new KeychainError('No active account found');
     }
-    return activeAccount.name;
+    return activeAccount.name || '';
   }
 }

@@ -65,7 +65,7 @@ export class KeychainContentService {
       
       Logger.info(`Creating ${isRootPost ? 'post' : 'comment'}: ${username}/${finalPermlink}`);
 
-      const result = {
+      const result: any = {
         author: username,
         permlink: finalPermlink,
         title: title || '',

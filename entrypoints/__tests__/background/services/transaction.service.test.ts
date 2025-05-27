@@ -6,6 +6,7 @@ import { Key } from '../../../../src/interfaces/keys.interface';
 import { Operation } from '@steempro/dsteem';
 import { PrivateKey, Transaction as SteemTransaction } from '@steempro/steem-tx-js';
 import MkUtils from '../../../background/utils/mk.utils';
+import { SteemTxUtils } from '../../../background/utils/steem-tx.utils';
 
 // Mock dependencies
 vi.mock('../../../background/services/steem-api.service');
@@ -16,6 +17,24 @@ vi.mock('@steempro/steem-tx-js', () => ({
     fromString: vi.fn(),
   },
   Transaction: vi.fn(),
+  call: vi.fn(),
+  config: {
+    setRPC: vi.fn(),
+    getRPC: vi.fn().mockReturnValue('https://api.steemit.com'),
+  },
+}));
+
+vi.mock('../../../background/utils/steem-tx.utils', () => ({
+  SteemTxUtils: {
+    getTransaction: vi.fn(),
+    sendOperation: vi.fn(),
+    createSignAndBroadcastTransaction: vi.fn(),
+    getData: vi.fn(),
+    setRpc: vi.fn(),
+    createTransaction: vi.fn(),
+    signTransaction: vi.fn(),
+    broadcastAndConfirmTransactionWithSignature: vi.fn(),
+  },
 }));
 
 describe('TransactionService', () => {
@@ -138,7 +157,12 @@ describe('TransactionService', () => {
     });
 
     it('should wait for confirmation when requested', async () => {
-      vi.mocked(mockSteemApi.getDynamicGlobalProperties).mockResolvedValue({} as any);
+      // Mock successful transaction confirmation
+      vi.mocked(SteemTxUtils.getTransaction).mockResolvedValue({
+        block_num: 12346,
+        transaction_id: 'test-tx-id-123',
+        ref_block_num: 12345,
+      });
 
       const operations: Operation[] = [
         ['vote', {
@@ -152,7 +176,9 @@ describe('TransactionService', () => {
       const result = await service.sendOperation(operations, mockKey, true);
 
       expect(result?.success).toBe(true);
-      expect(mockSteemApi.getDynamicGlobalProperties).toHaveBeenCalled();
+      expect(mockSteemApi.getHeadBlockNumber).toHaveBeenCalled();
+      expect(mockSteemApi.getRefBlockHeader).toHaveBeenCalled();
+      expect(SteemTxUtils.getTransaction).toHaveBeenCalledWith('test-tx-id-123');
     });
 
     it('should handle custom expiration time', async () => {
@@ -512,7 +538,8 @@ describe('TransactionService', () => {
       // Mock setTimeout to run immediately
       vi.useFakeTimers();
       
-      vi.mocked(mockSteemApi.getDynamicGlobalProperties).mockRejectedValue(new Error('Not found'));
+      // Mock getTransaction to always return null (transaction not found) to simulate timeout
+      vi.mocked(SteemTxUtils.getTransaction).mockResolvedValue(null);
 
       const operations: Operation[] = [
         ['vote', {

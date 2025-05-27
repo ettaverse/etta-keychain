@@ -139,7 +139,7 @@ interface SteemKeychain {
 
 **Architecture Implementation:**
 - ✅ **Modular Services:** 13 separate service files organized by functionality
-- ✅ **Central Orchestrator:** KeychainApiServiceV2 for request routing
+- ✅ **Central Orchestrator:** KeychainApiService for request routing
 - ✅ **Type Safety:** Shared TypeScript interfaces in keychain-api.types.ts
 - ✅ **Error Handling:** Consistent error patterns across all services
 - ✅ **Authentication:** Complete auth checks for all operations
@@ -312,8 +312,7 @@ Must maintain compatibility with existing STEEM Keychain API:
 - `entrypoints/content-error-handling.test.ts` - Error handling and timeout tests (18 tests)
 - `entrypoints/content-compatibility.test.ts` - STEEM Keychain compatibility tests (24 tests)
 - `entrypoints/content-demo.test.ts` - Real-world dApp usage demos (120 tests)
-- `entrypoints/keychain-api.service.test.ts` - Core API service tests (38 tests)
-- `entrypoints/keychain-api-v2.service.test.ts` - Modular orchestrator tests (20+ tests)
+- `entrypoints/keychain-api.service.test.ts` - Modular orchestrator tests (21 tests)
 - `entrypoints/keychain/encode.service.test.ts` - Encoding service tests (15 tests)
 - `entrypoints/keychain/sign.service.test.ts` - Signing service tests (14 tests)
 - `entrypoints/keychain/account-authority.service.test.ts` - Account authority tests (12 tests)

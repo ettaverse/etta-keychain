@@ -6,6 +6,7 @@ import Logger from '../../../src/utils/logger.utils';
 import { RC } from '../../../src/interfaces/active-account.interface';
 
 export class SteemApiService {
+  private static instance: SteemApiService;
   private currentRpc: Rpc;
 
   constructor(rpc?: Rpc) {
@@ -16,6 +17,13 @@ export class SteemApiService {
       isArray: Array.isArray(SteemTxConfig.node)
     });
     this.setRpc(this.currentRpc);
+  }
+
+  static getInstance(): SteemApiService {
+    if (!SteemApiService.instance) {
+      SteemApiService.instance = new SteemApiService();
+    }
+    return SteemApiService.instance;
   }
 
   private setRpc(rpc: Rpc): void {

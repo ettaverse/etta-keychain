@@ -8,8 +8,8 @@ import { KeychainResponse } from '../types/keychain-api.types';
 
 export class TokenService {
   constructor(
-    private accountService: AccountService,
-    private transactionService: TransactionService
+    private accountService?: AccountService,
+    private transactionService?: TransactionService
   ) {}
 
   async handleSendToken(request: any): Promise<KeychainResponse> {
@@ -31,6 +31,10 @@ export class TokenService {
       }
 
       const targetUsername = await this.resolveUsername(username, keychainPassword);
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(targetUsername, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -42,6 +46,10 @@ export class TokenService {
 
       this.validateAmount(amount);
       this.validateTokenSymbol(currency);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual token transfer using TransactionService
       // This would typically be a custom_json operation for Steem Engine tokens
@@ -87,6 +95,10 @@ export class TokenService {
         throw new KeychainError('Keychain is locked');
       }
 
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(username, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -100,6 +112,10 @@ export class TokenService {
 
       const fromCurrency = collaterized ? 'STEEM' : 'SBD';
       const toCurrency = collaterized ? 'SBD' : 'STEEM';
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual conversion using TransactionService
       // This would create a convert operation
@@ -157,6 +173,10 @@ export class TokenService {
       }
 
       const targetUsername = await this.resolveUsername(username, keychainPassword);
+      if (!this.accountService) {
+        throw new KeychainError('Account service not available');
+      }
+
       const account = await this.accountService.getAccount(targetUsername, keychainPassword);
       if (!account) {
         throw new KeychainError('Account not found in keychain');
@@ -167,6 +187,10 @@ export class TokenService {
       }
 
       this.validateSwapParameters(amount, slippage, steps);
+
+      if (!this.transactionService) {
+        throw new KeychainError('Transaction service not available');
+      }
 
       // TODO: Implement actual swap using TransactionService
       // This would involve multiple operations based on the provided steps
@@ -200,11 +224,15 @@ export class TokenService {
   private async resolveUsername(username: string | undefined, keychainPassword: string): Promise<string> {
     if (username) return username;
     
+    if (!this.accountService) {
+      throw new KeychainError('Account service not available');
+    }
+
     const activeAccount = await this.accountService.getActiveAccount(keychainPassword);
     if (!activeAccount) {
       throw new KeychainError('No active account found');
     }
-    return activeAccount.name;
+    return activeAccount.name || '';
   }
 
   private validateAmount(amount: string | number): void {

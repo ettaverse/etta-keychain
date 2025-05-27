@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WitnessService } from '../../../../background/services/keychain/witness.service';
+import { AccountService } from '../../../../background/services/account.service';
+import { TransactionService } from '../../../../background/services/transaction.service';
 import { KeychainError } from '../../../../../src/keychain-error';
+
+vi.mock('../../../../../src/utils/localStorage.utils', () => ({
+  default: {
+    getValueFromSessionStorage: vi.fn().mockResolvedValue('mock-password')
+  }
+}));
 
 vi.mock('../../../../background/services/auth.service', () => ({
   AuthService: {
@@ -34,9 +42,31 @@ vi.mock('../../../../background/services/steem-api.service', () => ({
 
 describe('WitnessService', () => {
   let service: WitnessService;
+  let mockAccountService: AccountService;
+  let mockTransactionService: TransactionService;
 
-  beforeEach(() => {
-    service = new WitnessService();
+  beforeEach(async () => {
+    // Reset localStorage mock to default authenticated state
+    const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+    vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue('mock-password');
+
+    mockAccountService = {
+      getAccount: vi.fn().mockResolvedValue({
+        name: 'testuser',
+        keys: { active: 'active-key', posting: 'posting-key' }
+      }),
+      getActiveAccount: vi.fn().mockResolvedValue({ name: 'testuser' })
+    } as any;
+
+    mockTransactionService = {
+      sendOperation: vi.fn().mockResolvedValue({
+        id: 'tx_123',
+        block_num: 12345,
+        trx_num: 1
+      })
+    } as any;
+
+    service = new WitnessService(mockAccountService, mockTransactionService);
     vi.clearAllMocks();
   });
 
@@ -77,9 +107,8 @@ describe('WitnessService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'witnessVote',
@@ -128,9 +157,7 @@ describe('WitnessService', () => {
     });
 
     it('should handle broadcast errors gracefully', async () => {
-      const { SteemApiService } = await import('../../../../background/services/steem-api.service');
-      const steemInstance = SteemApiService.getInstance();
-      vi.mocked(steemInstance.broadcastTransaction).mockRejectedValue(new Error('Witness vote broadcast failed'));
+      vi.mocked(mockTransactionService.sendOperation).mockRejectedValue(new Error('Witness vote broadcast failed'));
 
       const request = {
         type: 'witnessVote',
@@ -183,9 +210,8 @@ describe('WitnessService', () => {
     });
 
     it('should fail when user is not authenticated', async () => {
-      const { AuthService } = await import('../../../../background/services/auth.service');
-      const authInstance = AuthService.getInstance();
-      vi.mocked(authInstance.isAuthenticated).mockResolvedValue(false);
+      const LocalStorageUtils = await import('../../../../../src/utils/localStorage.utils');
+      vi.mocked(LocalStorageUtils.default.getValueFromSessionStorage).mockResolvedValue(null);
 
       const request = {
         type: 'witnessProxy',
@@ -217,9 +243,7 @@ describe('WitnessService', () => {
     });
 
     it('should handle broadcast errors gracefully', async () => {
-      const { SteemApiService } = await import('../../../../background/services/steem-api.service');
-      const steemInstance = SteemApiService.getInstance();
-      vi.mocked(steemInstance.broadcastTransaction).mockRejectedValue(new Error('Proxy broadcast failed'));
+      vi.mocked(mockTransactionService.sendOperation).mockRejectedValue(new Error('Proxy broadcast failed'));
 
       const request = {
         type: 'witnessProxy',
