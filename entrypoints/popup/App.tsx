@@ -5,6 +5,7 @@ import { AccountList } from './components/AccountList';
 import { AccountImportForm } from './components/AccountImportForm';
 import { AccountConnection } from './pages/AccountConnection';
 import { Button } from '@/components/ui/button';
+import { browser } from 'wxt/browser';
 
 type AppState = 'loading' | 'setup' | 'locked' | 'unlocked' | 'import' | 'connection';
 

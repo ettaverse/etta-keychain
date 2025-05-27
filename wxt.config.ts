@@ -11,4 +11,10 @@ export default defineConfig({
       extension_pages: "script-src 'self' 'wasm-unsafe-eval' http://localhost:3000 http://localhost:3001; object-src 'self'"
     }
   },
+  vite: () => ({
+    define: {
+      global: 'globalThis',
+      'process.env': {},
+    },
+  }),
 });

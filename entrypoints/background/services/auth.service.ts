@@ -1,9 +1,9 @@
 import { SecureStorage } from '../lib/storage';
-import { CryptoManager } from '../../../lib/crypto';
-import { KeychainError } from '../../../src/keychain-error';
-import logger from '../../../src/utils/logger.utils';
-import LocalStorageUtils from '../../../src/utils/localStorage.utils';
-import { LocalStorageKeyEnum } from '../../../src/reference-data/local-storage-key.enum';
+import { CryptoManager } from '@/lib/crypto';
+import { KeychainError } from '@/src/keychain-error';
+import logger from '@/src/utils/logger.utils';
+import LocalStorageUtils from '@/src/utils/localStorage.utils';
+import { LocalStorageKeyEnum } from '@/src/reference-data/local-storage-key.enum';
 import { randomBytes } from '@noble/hashes/utils';
 import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
