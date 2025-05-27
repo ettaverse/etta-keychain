@@ -8,9 +8,9 @@ import { PrivateKey, Transaction as SteemTransaction } from '@steempro/steem-tx-
 import MkUtils from '../../../background/utils/mk.utils';
 
 // Mock dependencies
-vi.mock('./steem-api.service');
-vi.mock('./key-management.service');
-vi.mock('../utils/mk.utils');
+vi.mock('../../../background/services/steem-api.service');
+vi.mock('../../../background/services/key-management.service');
+vi.mock('../../../background/utils/mk.utils');
 vi.mock('@steempro/steem-tx-js', () => ({
   PrivateKey: {
     fromString: vi.fn(),

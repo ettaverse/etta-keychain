@@ -6,8 +6,17 @@ import { LocalStorageKeyEnum } from "@/src/reference-data/local-storage-key.enum
 import { Keys } from "@/src/interfaces";
 
 // Mock the dependencies
-vi.mock("@/src/utils/localStorage.utils");
-vi.mock("../utils/encrypt.utils");
+vi.mock("@/src/utils/localStorage.utils", () => ({
+  default: {
+    getValueFromLocalStorage: vi.fn(),
+    saveValueInLocalStorage: vi.fn(),
+    removeValueFromLocalStorage: vi.fn(),
+    getValueFromSessionStorage: vi.fn(),
+    saveValueInSessionStorage: vi.fn(),
+    removeValueFromSessionStorage: vi.fn(),
+  },
+}));
+vi.mock("../../../background/utils/encrypt.utils");
 vi.mock("@/src/utils/logger.utils", () => ({
   default: {
     info: vi.fn(),
@@ -43,14 +52,14 @@ describe("SecureStorage", () => {
       const encryptedData = "encrypted-accounts-data";
       const existingAccounts: any[] = [];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         null,
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({
         list: existingAccounts,
       });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue(encryptedData);
-      vi.mocked(LocalStorageUtils.saveValueInLocalStorage).mockResolvedValue(
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue(encryptedData);
+      (LocalStorageUtils.saveValueInLocalStorage as any).mockResolvedValue(
         undefined,
       );
 
@@ -61,7 +70,7 @@ describe("SecureStorage", () => {
         "master_password",
       );
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -92,13 +101,13 @@ describe("SecureStorage", () => {
       };
       const encryptedData = "encrypted-accounts-data";
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "existing-encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({
         list: [existingAccount],
       });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue(encryptedData);
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue(encryptedData);
 
       await storage.saveAccount(
         mockUsername,
@@ -107,7 +116,7 @@ describe("SecureStorage", () => {
         "master_password",
       );
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -124,11 +133,11 @@ describe("SecureStorage", () => {
     });
 
     it("should set first account as active automatically", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage)
+      (LocalStorageUtils.getValueFromLocalStorage as any)
         .mockResolvedValueOnce(null) // No existing accounts
         .mockResolvedValueOnce(null); // No active account
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted");
 
       await storage.saveAccount(
         mockUsername,
@@ -159,10 +168,10 @@ describe("SecureStorage", () => {
         },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({
         list: storedAccounts,
       });
 
@@ -172,10 +181,10 @@ describe("SecureStorage", () => {
     });
 
     it("should return null if account not found", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
 
       const account = await storage.getAccount("nonexistent", mockPassword);
 
@@ -183,10 +192,10 @@ describe("SecureStorage", () => {
     });
 
     it("should return null on decryption error", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockImplementation(() => {
+      vi.mocked(EncryptUtils).decryptToJson.mockImplementation(() => {
         throw new Error("Decryption failed");
       });
 
@@ -198,7 +207,7 @@ describe("SecureStorage", () => {
 
   describe("getActiveAccount", () => {
     it("should return the active account name", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         mockUsername,
       );
 
@@ -211,7 +220,7 @@ describe("SecureStorage", () => {
     });
 
     it("should return null if no active account", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         null,
       );
 
@@ -223,10 +232,10 @@ describe("SecureStorage", () => {
 
   describe("setActiveAccount", () => {
     it("should set the active account", async () => {
-      vi.mocked(LocalStorageUtils.saveValueInLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.saveValueInLocalStorage as any).mockResolvedValue(
         undefined,
       );
-      vi.mocked(LocalStorageUtils.getValueFromSessionStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromSessionStorage as any).mockResolvedValue(
         null,
       );
 
@@ -251,18 +260,18 @@ describe("SecureStorage", () => {
         },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromSessionStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromSessionStorage as any).mockResolvedValue(
         mk,
       );
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: accounts });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted-updated");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: accounts });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted-updated");
 
       await storage.setActiveAccount(mockUsername);
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -298,21 +307,21 @@ describe("SecureStorage", () => {
         },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: accounts });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted-updated");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: accounts });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted-updated");
 
       await storage.deleteAccount(mockUsername, mockPassword);
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([accounts[0]]),
         }),
         mockPassword,
       );
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.not.arrayContaining([accounts[1]]),
         }),
@@ -321,10 +330,10 @@ describe("SecureStorage", () => {
     });
 
     it("should throw error if account not found", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
 
       await expect(
         storage.deleteAccount("nonexistent", mockPassword),
@@ -351,11 +360,11 @@ describe("SecureStorage", () => {
         },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage)
+      (LocalStorageUtils.getValueFromLocalStorage as any)
         .mockResolvedValueOnce("encrypted") // For getAllAccountsInternal
         .mockResolvedValueOnce(mockUsername); // For getActiveAccount
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: accounts });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted-updated");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: accounts });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted-updated");
 
       await storage.deleteAccount(mockUsername, mockPassword);
 
@@ -373,10 +382,10 @@ describe("SecureStorage", () => {
         // No hash to bypass hash validation in test
       };
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue(validData);
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue(validData);
 
       const isValid = await storage.validateStorageIntegrity(mockPassword);
 
@@ -384,7 +393,7 @@ describe("SecureStorage", () => {
     });
 
     it("should return true if no data exists", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         null,
       );
 
@@ -394,10 +403,10 @@ describe("SecureStorage", () => {
     });
 
     it("should return false for invalid data structure", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue(null);
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue(null);
 
       const isValid = await storage.validateStorageIntegrity(mockPassword);
 
@@ -412,11 +421,11 @@ describe("SecureStorage", () => {
         { name: "user2", keys: { posting: "key2" } },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         null,
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted");
 
       await storage.importBulkAccounts(
         accountsToImport,
@@ -424,7 +433,7 @@ describe("SecureStorage", () => {
         "individual_keys",
       );
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -459,17 +468,17 @@ describe("SecureStorage", () => {
         { name: "user2", keys: { posting: "key2" } },
       ];
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({
         list: [existingAccount],
       });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted-updated");
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted-updated");
 
       await storage.importBulkAccounts(accountsToImport, mockPassword);
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -501,17 +510,17 @@ describe("SecureStorage", () => {
         posting: "new-posting-key",
       };
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({
         list: [existingAccount],
       });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted-updated");
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted-updated");
 
       await storage.updateAccountKeys(mockUsername, newKeys, mockPassword);
 
-      expect(EncryptUtils.encryptJson).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalledWith(
         expect.objectContaining({
           list: expect.arrayContaining([
             expect.objectContaining({
@@ -528,10 +537,10 @@ describe("SecureStorage", () => {
     });
 
     it("should throw error if account not found", async () => {
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
 
       await expect(
         storage.updateAccountKeys("nonexistent", mockKeys, mockPassword),
@@ -569,16 +578,16 @@ describe("SecureStorage", () => {
       ];
       const exportedData = "exported-encrypted-data";
 
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         "encrypted",
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: accounts });
-      vi.mocked(EncryptUtils.encrypt).mockReturnValue(exportedData);
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: accounts });
+      vi.mocked(EncryptUtils).encrypt.mockReturnValue(exportedData);
 
       const result = await storage.exportAccounts(mockPassword);
 
       expect(result).toBe(exportedData);
-      expect(EncryptUtils.encrypt).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).encrypt).toHaveBeenCalledWith(
         expect.stringContaining('"version":1'),
         mockPassword,
       );
@@ -594,27 +603,27 @@ describe("SecureStorage", () => {
       };
       const encryptedBackup = "encrypted-backup";
 
-      vi.mocked(EncryptUtils.decrypt).mockReturnValue(
+      vi.mocked(EncryptUtils).decrypt.mockReturnValue(
         JSON.stringify(backupData),
       );
-      vi.mocked(LocalStorageUtils.getValueFromLocalStorage).mockResolvedValue(
+      (LocalStorageUtils.getValueFromLocalStorage as any).mockResolvedValue(
         null,
       );
-      vi.mocked(EncryptUtils.decryptToJson).mockReturnValue({ list: [] });
-      vi.mocked(EncryptUtils.encryptJson).mockReturnValue("encrypted");
+      vi.mocked(EncryptUtils).decryptToJson.mockReturnValue({ list: [] });
+      vi.mocked(EncryptUtils).encryptJson.mockReturnValue("encrypted");
 
       await storage.importFromBackup(encryptedBackup, mockPassword);
 
-      expect(EncryptUtils.decrypt).toHaveBeenCalledWith(
+      expect(vi.mocked(EncryptUtils).decrypt).toHaveBeenCalledWith(
         encryptedBackup,
         mockPassword,
       );
-      expect(EncryptUtils.encryptJson).toHaveBeenCalled();
+      expect(vi.mocked(EncryptUtils).encryptJson).toHaveBeenCalled();
     });
 
     it("should throw error for invalid backup format", async () => {
       const invalidBackup = { invalid: "data" };
-      vi.mocked(EncryptUtils.decrypt).mockReturnValue(
+      vi.mocked(EncryptUtils).decrypt.mockReturnValue(
         JSON.stringify(invalidBackup),
       );
 

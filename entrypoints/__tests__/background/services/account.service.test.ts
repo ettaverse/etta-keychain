@@ -6,9 +6,32 @@ import { KeyManagementService } from '../../../background/services/key-managemen
 import { KeychainError } from '../../../../src/keychain-error';
 import { PrivateKeyType } from '../../../../src/interfaces/keys.interface';
 
-vi.mock('../lib/storage');
-vi.mock('./steem-api.service');
-vi.mock('./key-management.service');
+vi.mock('../../../background/lib/storage', () => ({
+  SecureStorage: vi.fn().mockImplementation(() => ({
+    saveAccount: vi.fn(),
+    getAccount: vi.fn(),
+    getAllAccounts: vi.fn(),
+    deleteAccount: vi.fn(),
+    setActiveAccount: vi.fn(),
+    getActiveAccount: vi.fn(),
+    getAllAccountsWithMetadata: vi.fn(),
+  })),
+}));
+vi.mock('../../../background/services/steem-api.service', () => ({
+  SteemApiService: vi.fn().mockImplementation(() => ({
+    getAccount: vi.fn(),
+    getAccountRC: vi.fn(),
+  })),
+}));
+vi.mock('../../../background/services/key-management.service', () => ({
+  KeyManagementService: vi.fn().mockImplementation(() => ({
+    deriveKeys: vi.fn(),
+    validateWIF: vi.fn(),
+    getKeyType: vi.fn(),
+    getKeysFromWIF: vi.fn(),
+    getPublicKeyFromPrivateKeyString: vi.fn(),
+  })),
+}));
 
 describe('AccountService', () => {
   let service: AccountService;
@@ -61,9 +84,9 @@ describe('AccountService', () => {
       const password = 'P5JDqKpbBKn1fkU1XB2YnmosHVDkj9nZt2Hx7FnTjvPrz3MTvQQb';
       const keychainPassword = 'keychainPass123';
 
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.deriveKeys).mockReturnValue(mockKeys);
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.deriveKeys as any).mockReturnValue(mockKeys);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.importAccountWithMasterPassword(username, password, keychainPassword);
 
@@ -89,7 +112,7 @@ describe('AccountService', () => {
     });
 
     it('should throw error if account does not exist', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([]);
+      (mockSteemApi.getAccount as any).mockResolvedValue([]);
 
       await expect(
         service.importAccountWithMasterPassword('nonexistent', 'password', 'keychainPass')
@@ -97,8 +120,8 @@ describe('AccountService', () => {
     });
 
     it('should throw error if derived keys do not match account', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.deriveKeys).mockReturnValue(null);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.deriveKeys as any).mockReturnValue(null);
 
       await expect(
         service.importAccountWithMasterPassword('testuser', 'wrongpassword', 'keychainPass')
@@ -112,14 +135,14 @@ describe('AccountService', () => {
       const wif = '5JpostingKey';
       const keychainPassword = 'keychainPass123';
 
-      vi.mocked(mockKeyManager.validateWIF).mockReturnValue(true);
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType).mockReturnValue(PrivateKeyType.POSTING);
-      vi.mocked(mockKeyManager.getKeysFromWIF).mockReturnValue({ 
+      (mockKeyManager.validateWIF as any).mockReturnValue(true);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any).mockReturnValue(PrivateKeyType.POSTING);
+      (mockKeyManager.getKeysFromWIF as any).mockReturnValue({ 
         posting: wif, 
         postingPubkey: mockKeys.postingPubkey 
       });
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.importAccountWithWIF(username, wif, keychainPassword);
 
@@ -139,14 +162,14 @@ describe('AccountService', () => {
       const wif = '5JownerKey';
       const keychainPassword = 'keychainPass123';
 
-      vi.mocked(mockKeyManager.validateWIF).mockReturnValue(true);
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType).mockReturnValue(PrivateKeyType.OWNER);
-      vi.mocked(mockKeyManager.getKeysFromWIF).mockReturnValue({ 
+      (mockKeyManager.validateWIF as any).mockReturnValue(true);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any).mockReturnValue(PrivateKeyType.OWNER);
+      (mockKeyManager.getKeysFromWIF as any).mockReturnValue({ 
         owner: wif,
         ownerPubkey: 'STMOwnerPubkey'
       });
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.importAccountWithWIF(username, wif, keychainPassword);
 
@@ -159,7 +182,7 @@ describe('AccountService', () => {
     });
 
     it('should throw error if WIF is invalid', async () => {
-      vi.mocked(mockKeyManager.validateWIF).mockReturnValue(false);
+      (mockKeyManager.validateWIF as any).mockReturnValue(false);
 
       await expect(
         service.importAccountWithWIF('user', 'invalidWIF', 'keychainPass')
@@ -167,9 +190,9 @@ describe('AccountService', () => {
     });
 
     it('should throw error if key does not belong to account', async () => {
-      vi.mocked(mockKeyManager.validateWIF).mockReturnValue(true);
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType).mockReturnValue(null);
+      (mockKeyManager.validateWIF as any).mockReturnValue(true);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any).mockReturnValue(null);
 
       await expect(
         service.importAccountWithWIF('testuser', '5JwrongKey', 'keychainPass')
@@ -187,16 +210,16 @@ describe('AccountService', () => {
       };
       const keychainPassword = 'keychainPass123';
 
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType)
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any)
         .mockReturnValueOnce(PrivateKeyType.POSTING)
         .mockReturnValueOnce(PrivateKeyType.ACTIVE)
         .mockReturnValueOnce(PrivateKeyType.MEMO);
-      vi.mocked(mockKeyManager.getPublicKeyFromPrivateKeyString)
+      (mockKeyManager.getPublicKeyFromPrivateKeyString as any)
         .mockReturnValueOnce(mockKeys.postingPubkey)
         .mockReturnValueOnce(mockKeys.activePubkey)
         .mockReturnValueOnce(mockKeys.memoPubkey);
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.importAccountWithMultipleKeys(username, keys, keychainPassword);
 
@@ -218,8 +241,8 @@ describe('AccountService', () => {
     it('should throw error if wrong key type is provided', async () => {
       const keys = { posting: '5JactiveKey' }; // Active key provided as posting
 
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType).mockReturnValue(PrivateKeyType.ACTIVE);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any).mockReturnValue(PrivateKeyType.ACTIVE);
 
       await expect(
         service.importAccountWithMultipleKeys('testuser', keys, 'keychainPass')
@@ -231,10 +254,10 @@ describe('AccountService', () => {
       const keys = { posting: '5JpostingKey' };
       const keychainPassword = 'keychainPass123';
 
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.getKeyType).mockReturnValue(PrivateKeyType.POSTING);
-      vi.mocked(mockKeyManager.getPublicKeyFromPrivateKeyString).mockReturnValue(mockKeys.postingPubkey);
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.getKeyType as any).mockReturnValue(PrivateKeyType.POSTING);
+      (mockKeyManager.getPublicKeyFromPrivateKeyString as any).mockReturnValue(mockKeys.postingPubkey);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.importAccountWithMultipleKeys(username, keys, keychainPassword);
 
@@ -270,10 +293,10 @@ describe('AccountService', () => {
         percentage: 50
       };
 
-      vi.mocked(mockStorage.getActiveAccount).mockResolvedValue('testuser');
-      vi.mocked(mockStorage.getAccount).mockResolvedValue(localAccount);
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockSteemApi.getAccountRC).mockResolvedValue(rc);
+      (mockStorage.getActiveAccount as any).mockResolvedValue('testuser');
+      (mockStorage.getAccount as any).mockResolvedValue(localAccount);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockSteemApi.getAccountRC as any).mockResolvedValue(rc);
 
       const result = await service.getActiveAccount(keychainPassword);
 
@@ -285,15 +308,15 @@ describe('AccountService', () => {
     });
 
     it('should return null if no active account is set', async () => {
-      vi.mocked(mockStorage.getActiveAccount).mockResolvedValue(null);
+      (mockStorage.getActiveAccount as any).mockResolvedValue(null);
 
       const result = await service.getActiveAccount('keychainPass');
       expect(result).toBeNull();
     });
 
     it('should return null if active account not found in storage', async () => {
-      vi.mocked(mockStorage.getActiveAccount).mockResolvedValue('testuser');
-      vi.mocked(mockStorage.getAccount).mockResolvedValue(null);
+      (mockStorage.getActiveAccount as any).mockResolvedValue('testuser');
+      (mockStorage.getAccount as any).mockResolvedValue(null);
 
       const result = await service.getActiveAccount('keychainPass');
       expect(result).toBeNull();
@@ -309,9 +332,9 @@ describe('AccountService', () => {
         }
       };
 
-      vi.mocked(mockStorage.getActiveAccount).mockResolvedValue('testuser');
-      vi.mocked(mockStorage.getAccount).mockResolvedValue(localAccount);
-      vi.mocked(mockSteemApi.getAccount).mockRejectedValue(new Error('Network error'));
+      (mockStorage.getActiveAccount as any).mockResolvedValue('testuser');
+      (mockStorage.getAccount as any).mockResolvedValue(localAccount);
+      (mockSteemApi.getAccount as any).mockRejectedValue(new Error('Network error'));
 
       const result = await service.getActiveAccount('keychainPass');
       expect(result).toBeNull();
@@ -335,10 +358,10 @@ describe('AccountService', () => {
 
       const authAccount = { ...mockAccount, name: authorizedUsername };
 
-      vi.mocked(mockSteemApi.getAccount)
+      (mockSteemApi.getAccount as any)
         .mockResolvedValueOnce([mainAccount])
         .mockResolvedValueOnce([authAccount]);
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.addAuthorizedAccount(username, authorizedUsername, keychainPassword);
 
@@ -370,10 +393,10 @@ describe('AccountService', () => {
 
       const authAccount = { ...mockAccount, name: authorizedUsername };
 
-      vi.mocked(mockSteemApi.getAccount)
+      (mockSteemApi.getAccount as any)
         .mockResolvedValueOnce([mainAccount])
         .mockResolvedValueOnce([authAccount]);
-      vi.mocked(mockStorage.saveAccount).mockResolvedValue(undefined);
+      (mockStorage.saveAccount as any).mockResolvedValue(undefined);
 
       await service.addAuthorizedAccount(username, authorizedUsername, keychainPassword);
 
@@ -389,7 +412,7 @@ describe('AccountService', () => {
       const mainAccount = { ...mockAccount, name: 'mainuser' };
       const authAccount = { ...mockAccount, name: 'authuser' };
 
-      vi.mocked(mockSteemApi.getAccount)
+      (mockSteemApi.getAccount as any)
         .mockResolvedValueOnce([mainAccount])
         .mockResolvedValueOnce([authAccount]);
 
@@ -399,7 +422,7 @@ describe('AccountService', () => {
     });
 
     it('should throw error if accounts do not exist', async () => {
-      vi.mocked(mockSteemApi.getAccount)
+      (mockSteemApi.getAccount as any)
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([mockAccount]);
 
@@ -411,30 +434,30 @@ describe('AccountService', () => {
 
   describe('validateMasterPassword', () => {
     it('should return true for valid master password', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.deriveKeys).mockReturnValue(mockKeys);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.deriveKeys as any).mockReturnValue(mockKeys);
 
       const result = await service.validateMasterPassword('testuser', 'validPassword');
       expect(result).toBe(true);
     });
 
     it('should return false for invalid master password', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([mockAccount]);
-      vi.mocked(mockKeyManager.deriveKeys).mockReturnValue(null);
+      (mockSteemApi.getAccount as any).mockResolvedValue([mockAccount]);
+      (mockKeyManager.deriveKeys as any).mockReturnValue(null);
 
       const result = await service.validateMasterPassword('testuser', 'wrongPassword');
       expect(result).toBe(false);
     });
 
     it('should return false if account does not exist', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockResolvedValue([]);
+      (mockSteemApi.getAccount as any).mockResolvedValue([]);
 
       const result = await service.validateMasterPassword('nonexistent', 'password');
       expect(result).toBe(false);
     });
 
     it('should return false on error', async () => {
-      vi.mocked(mockSteemApi.getAccount).mockRejectedValue(new Error('Network error'));
+      (mockSteemApi.getAccount as any).mockRejectedValue(new Error('Network error'));
 
       const result = await service.validateMasterPassword('testuser', 'password');
       expect(result).toBe(false);
@@ -451,7 +474,7 @@ describe('AccountService', () => {
           importedAt: Date.now()
         }
       };
-      vi.mocked(mockStorage.getAccount).mockResolvedValue(mockAccount);
+      (mockStorage.getAccount as any).mockResolvedValue(mockAccount);
 
       const result = await service.getAccount('testuser', 'keychainPass');
       expect(result).toEqual(mockAccount);
@@ -460,7 +483,7 @@ describe('AccountService', () => {
 
     it('should get all accounts', async () => {
       const mockAccounts = [{ name: 'user1', keys: {} }, { name: 'user2', keys: {} }];
-      vi.mocked(mockStorage.getAllAccounts).mockResolvedValue(mockAccounts);
+      (mockStorage.getAllAccounts as any).mockResolvedValue(mockAccounts);
 
       const result = await service.getAllAccounts('keychainPass');
       expect(result).toEqual(mockAccounts);
@@ -468,14 +491,14 @@ describe('AccountService', () => {
     });
 
     it('should delete account', async () => {
-      vi.mocked(mockStorage.deleteAccount).mockResolvedValue(undefined);
+      (mockStorage.deleteAccount as any).mockResolvedValue(undefined);
 
       await service.deleteAccount('testuser', 'keychainPass');
       expect(mockStorage.deleteAccount).toHaveBeenCalledWith('testuser', 'keychainPass');
     });
 
     it('should set active account', async () => {
-      vi.mocked(mockStorage.setActiveAccount).mockResolvedValue(undefined);
+      (mockStorage.setActiveAccount as any).mockResolvedValue(undefined);
 
       await service.setActiveAccount('testuser');
       expect(mockStorage.setActiveAccount).toHaveBeenCalledWith('testuser');
@@ -483,7 +506,7 @@ describe('AccountService', () => {
 
     it('should check if account exists', async () => {
       const mockAccounts = [{ name: 'user1', keys: {} }, { name: 'user2', keys: {} }];
-      vi.mocked(mockStorage.getAllAccounts).mockResolvedValue(mockAccounts);
+      (mockStorage.getAllAccounts as any).mockResolvedValue(mockAccounts);
 
       const exists = await service.accountExists('user1', 'keychainPass');
       expect(exists).toBe(true);
@@ -497,7 +520,7 @@ describe('AccountService', () => {
         { name: 'user1', keys: {}, metadata: { importMethod: 'master_password' as const, importedAt: Date.now() } },
         { name: 'user2', keys: {}, metadata: { importMethod: 'individual_keys' as const, importedAt: Date.now() } },
       ];
-      vi.mocked(mockStorage.getAllAccountsWithMetadata).mockResolvedValue(mockAccounts);
+      (mockStorage.getAllAccountsWithMetadata as any).mockResolvedValue(mockAccounts);
 
       const metadata = await service.getAccountMetadata('user1', 'keychainPass');
       expect(metadata).toEqual({ importMethod: 'master_password', importedAt: expect.any(Number) });

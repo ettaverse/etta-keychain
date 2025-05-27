@@ -8,9 +8,6 @@ export default defineConfig({
     include: [
       '**/*.{test,spec}.{js,ts}'
     ],
-    exclude: [
-      'entrypoints/__tests__/**'
-    ],
     coverage: {
       reporter: ['text', 'json', 'html'],
       include: ['entrypoints/**/*.ts', 'src/**/*.ts', 'lib/**/*.ts'],

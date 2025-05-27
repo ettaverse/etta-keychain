@@ -6,8 +6,8 @@ import LocalStorageUtils from '../../../../src/utils/localStorage.utils';
 import { bytesToHex, hexToBytes } from '@noble/ciphers/utils';
 
 // Mock dependencies
-vi.mock('../../../lib/crypto');
-vi.mock('../../../src/utils/logger.utils', () => ({
+vi.mock('../../../../lib/crypto');
+vi.mock('../../../../src/utils/logger.utils', () => ({
   default: {
     info: vi.fn(),
     error: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('../../../src/utils/logger.utils', () => ({
     debug: vi.fn(),
   },
 }));
-vi.mock('../../../src/utils/localStorage.utils', () => ({
+vi.mock('../../../../src/utils/localStorage.utils', () => ({
   default: {
     getValueFromLocalStorage: vi.fn(),
     saveValueInLocalStorage: vi.fn(),
