@@ -123,6 +123,24 @@ export default defineBackground(() => {
             return;
           }
 
+          case 'getAccount': {
+            if (!steemApi) {
+              sendResponse({ success: false, error: 'Services not initialized' });
+              return;
+            }
+            try {
+              const accounts = await steemApi.getAccount(message.payload.username);
+              sendResponse({ success: true, data: accounts });
+            } catch (error: any) {
+              console.error('Failed to get account:', error);
+              sendResponse({ 
+                success: false, 
+                error: error.message || 'Failed to fetch account from blockchain' 
+              });
+            }
+            return;
+          }
+
           case 'importAccountWithMasterPassword': {
             if (!accountService || authService?.isLocked()) {
               sendResponse({ success: false, error: 'Keychain is locked' });
