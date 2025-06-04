@@ -41,11 +41,62 @@ export default defineBackground(() => {
 
   // Message handler
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Background received message:', message.action);
+    console.log('Background received message:', message.action || message.type);
 
     // Handle async operations
     (async () => {
       try {
+        // Handle messages with 'type' field (for keychain API compatibility)
+        if (message.type) {
+          switch (message.type) {
+            case 'keychain-get-account-details': {
+              if (!accountService || authService?.isLocked()) {
+                sendResponse({ success: false, error: 'Keychain is locked' });
+                return;
+              }
+              
+              const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+              if (!keychainPassword) {
+                sendResponse({ success: false, error: 'Keychain is locked' });
+                return;
+              }
+              
+              try {
+                const { username } = message.payload;
+                const allAccounts = await accountService.getAllAccounts(keychainPassword);
+                const account = allAccounts.find(acc => acc.name === username);
+                
+                if (!account) {
+                  sendResponse({ success: false, error: 'Account not found' });
+                  return;
+                }
+                
+                // Check if this is a master password account
+                const isMasterPassword = !!(account.keys.posting || account.keys.active || account.keys.memo || account.keys.owner);
+                
+                // Return full account data including keys
+                sendResponse({
+                  success: true,
+                  account: {
+                    username: account.name,
+                    isActive: await storage.getActiveAccount() === account.name,
+                    isMasterPassword: isMasterPassword
+                  },
+                  keys: account.keys
+                });
+              } catch (error) {
+                console.error('Failed to get account details', error);
+                sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+              }
+              return;
+            }
+            
+            default:
+              // Fall through to action-based switch
+              break;
+          }
+        }
+        
         switch (message.action) {
           case 'getAuthState': {
             const authData = await LocalStorageUtils.getValueFromLocalStorage(LocalStorageKeyEnum.AUTH_DATA);

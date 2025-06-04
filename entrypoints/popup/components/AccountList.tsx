@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChevronRight, Plus, Trash2, User, Key, Shield, Mail, Edit3 } from 'lucide-react';
 
 interface Account {
   name: string;
@@ -21,6 +23,7 @@ interface AccountListProps {
 }
 
 export function AccountList({ onAddAccount }: AccountListProps) {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccount] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -93,22 +96,18 @@ export function AccountList({ onAddAccount }: AccountListProps) {
 
   const getKeyBadges = (keys: Account['keys']) => {
     const keyTypes = [];
-    if (keys.posting) keyTypes.push('P');
-    if (keys.active) keyTypes.push('A');
-    if (keys.owner) keyTypes.push('O');
-    if (keys.memo) keyTypes.push('M');
+    if (keys.posting) keyTypes.push({ type: 'posting', icon: Edit3, label: 'Posting' });
+    if (keys.active) keyTypes.push({ type: 'active', icon: Key, label: 'Active' });
+    if (keys.owner) keyTypes.push({ type: 'owner', icon: Shield, label: 'Owner' });
+    if (keys.memo) keyTypes.push({ type: 'memo', icon: Mail, label: 'Memo' });
     
-    return keyTypes.map(type => (
+    return keyTypes.map(({ type, icon: Icon, label }) => (
       <span 
         key={type} 
-        className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full bg-primary/10 text-primary"
-        title={
-          type === 'P' ? 'Posting' : 
-          type === 'A' ? 'Active' : 
-          type === 'O' ? 'Owner' : 'Memo'
-        }
+        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        title={label}
       >
-        {type}
+        <Icon className="h-4 w-4" />
       </span>
     ));
   };
@@ -128,7 +127,10 @@ export function AccountList({ onAddAccount }: AccountListProps) {
       <Card>
         <CardContent className="p-6 text-center space-y-4">
           <p className="text-muted-foreground">No accounts imported yet</p>
-          <Button onClick={onAddAccount}>Import Account</Button>
+          <Button onClick={onAddAccount} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Import Account
+          </Button>
         </CardContent>
       </Card>
     );
@@ -136,66 +138,90 @@ export function AccountList({ onAddAccount }: AccountListProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Your Accounts</CardTitle>
-            <CardDescription>
-              Manage your STEEM accounts
-            </CardDescription>
+            <CardTitle className="text-lg font-semibold text-foreground">Accounts</CardTitle>
           </div>
-          <Button onClick={onAddAccount} size="sm">
+          <Button 
+            onClick={onAddAccount} 
+            size="sm" 
+            className="gap-2 px-4 py-2 h-auto font-medium"
+          >
+            <Plus className="h-4 w-4" />
             Add Account
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Active Account</label>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-foreground">Active</label>
           <Select value={activeAccount} onValueChange={handleAccountSwitch}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select active account" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select account" />
             </SelectTrigger>
             <SelectContent>
               {accounts.map(account => (
                 <SelectItem key={account.name} value={account.name}>
-                  {account.name}
+                  @{account.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">All Accounts</h4>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="space-y-3">
             {accounts.map(account => (
               <div 
                 key={account.name} 
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  account.name === activeAccount ? 'bg-primary/5 border-primary/20' : ''
+                className={`flex items-center justify-between p-4 rounded-xl border transition-all hover:shadow-md ${
+                  account.name === activeAccount 
+                    ? 'bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30 shadow-sm' 
+                    : 'hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className="font-medium">@{account.name}</div>
-                    <div className="flex gap-1 mt-1">
+                <div 
+                  className="flex items-center gap-4 flex-1 cursor-pointer"
+                  onClick={() => navigate(`/account/${account.name}`)}
+                >
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 shrink-0">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-medium text-base">@{account.name}</span>
+                      {account.name === activeAccount && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full border border-green-200 shrink-0">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
                       {getKeyBadges(account.keys)}
                     </div>
                   </div>
-                  {account.name === activeAccount && (
-                    <span className="text-xs text-primary font-medium">ACTIVE</span>
-                  )}
                 </div>
                 
-                <Dialog>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/account/${account.name}`)}
+                    className="h-10 w-10 p-0 rounded-full hover:bg-primary/10"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                  
+                  <Dialog>
                   <DialogTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => setDeleteAccount(account.name)}
+                      className="h-10 w-10 p-0 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      Delete
+                      <Trash2 className="h-5 w-5" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -223,6 +249,7 @@ export function AccountList({ onAddAccount }: AccountListProps) {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
             ))}
           </div>
