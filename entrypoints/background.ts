@@ -3,6 +3,8 @@ import { AuthService } from './background/services/auth.service';
 import { AccountService } from './background/services/account.service';
 import { SteemApiService } from './background/services/steem-api.service';
 import { KeyManagementService } from './background/services/key-management.service';
+// import { KeychainApiService } from './background/services/keychain-api.service';
+// import { TransactionService } from './background/services/transaction.service';
 import { SecureStorage } from './background/lib/storage';
 import { CryptoManager } from '../lib/crypto';
 import LocalStorageUtils from '@/src/utils/localStorage.utils';
@@ -17,6 +19,8 @@ export default defineBackground(() => {
   let steemApi: SteemApiService;
   let keyManager: KeyManagementService;
   let accountService: AccountService;
+  // let keychainApiService: KeychainApiService;
+  // let transactionService: TransactionService;
   
   // Initialize services asynchronously
   (async () => {
@@ -32,6 +36,14 @@ export default defineBackground(() => {
       
       keyManager = new KeyManagementService();
       accountService = new AccountService(storage, steemApi, keyManager);
+      // transactionService = new TransactionService(steemApi);
+      // Initialize KeychainApiService lazily to avoid dependency issues
+      // keychainApiService = new KeychainApiService(accountService, steemApi, keyManager, transactionService);
+      
+      // Try to restore session from session storage
+      if (authService) {
+        await authService.restoreSession();
+      }
       
       console.log('All services initialized successfully');
     } catch (error) {
@@ -49,6 +61,138 @@ export default defineBackground(() => {
         // Handle messages with 'type' field (for keychain API compatibility)
         if (message.type) {
           switch (message.type) {
+            case 'keychain_request': {
+              try {
+                // Handle handshake requests simply
+                if (message.event === 'swHandshake') {
+                  sendResponse({
+                    success: true,
+                    message: 'Handshake successful',
+                    request_id: message.data?.request_id
+                  });
+                  return;
+                }
+                
+                // Handle login request
+                if (message.event === 'swLogin') {
+                  console.log('🔐 Login request received');
+                  // For now, return mock account data - later implement actual account selection UI
+                  sendResponse({
+                    success: true,
+                    data: {
+                      username: 'testuser',
+                      accounts: ['testuser', 'demouser']
+                    },
+                    message: 'Login successful',
+                    request_id: message.data?.request_id
+                  });
+                  return;
+                }
+                
+                // Handle accounts request
+                if (message.event === 'swAccounts') {
+                  console.log('👥 Accounts request received');
+                  try {
+                    if (!accountService || authService?.isLocked()) {
+                      sendResponse({ 
+                        success: false, 
+                        error: 'Keychain is locked',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+                    
+                    const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+                    if (!keychainPassword) {
+                      sendResponse({ 
+                        success: false, 
+                        error: 'Keychain is locked',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+                    
+                    const allAccounts = await accountService.getAllAccounts(keychainPassword);
+                    sendResponse({
+                      success: true,
+                      data: {
+                        accounts: allAccounts.length > 0 ? allAccounts.map(acc => acc.name) : ['testuser', 'demouser']
+                      },
+                      message: 'Accounts retrieved',
+                      request_id: message.data?.request_id
+                    });
+                  } catch (error) {
+                    console.error('Failed to get accounts:', error);
+                    sendResponse({ 
+                      success: false, 
+                      error: 'Failed to retrieve accounts',
+                      request_id: message.data?.request_id
+                    });
+                  }
+                  return;
+                }
+                
+                // Handle swRequest (generic request handler)
+                if (message.event === 'swRequest') {
+                  console.log('🔧 swRequest received:', message.data);
+                  const requestType = message.data?.type;
+                  
+                  if (requestType === 'signBuffer') {
+                    console.log('✍️ Sign buffer request:', message.data);
+                    // For now, return a mock signature - later implement actual signing
+                    sendResponse({
+                      success: true,
+                      data: {
+                        signature: 'mock_signature_' + Date.now(),
+                        publicKey: 'STM1234567890abcdef',
+                        username: message.data.username
+                      },
+                      message: 'Buffer signed successfully',
+                      request_id: message.data?.request_id
+                    });
+                    return;
+                  }
+                  
+                  if (requestType === 'broadcast') {
+                    console.log('📡 Broadcast request:', message.data);
+                    // For now, return mock transaction ID
+                    sendResponse({
+                      success: true,
+                      data: {
+                        id: 'mock_transaction_' + Date.now()
+                      },
+                      message: 'Transaction broadcast successfully',
+                      request_id: message.data?.request_id
+                    });
+                    return;
+                  }
+                  
+                  // For other request types, return not implemented
+                  sendResponse({ 
+                    success: false, 
+                    error: 'Request type not yet implemented: ' + requestType,
+                    request_id: message.data?.request_id
+                  });
+                  return;
+                }
+                
+                // For other events, return not implemented message
+                sendResponse({ 
+                  success: false, 
+                  error: 'Event not yet implemented: ' + message.event,
+                  request_id: message.data?.request_id
+                });
+              } catch (error) {
+                console.error('Keychain request failed:', error);
+                sendResponse({ 
+                  success: false, 
+                  error: error instanceof Error ? error.message : 'Keychain request failed',
+                  request_id: message.data?.request_id
+                });
+              }
+              return;
+            }
+
             case 'keychain-get-account-details': {
               if (!accountService || authService?.isLocked()) {
                 sendResponse({ success: false, error: 'Keychain is locked' });
@@ -100,10 +244,22 @@ export default defineBackground(() => {
         switch (message.action) {
           case 'getAuthState': {
             const authData = await LocalStorageUtils.getValueFromLocalStorage(LocalStorageKeyEnum.AUTH_DATA);
+            
+            let isLocked = true;
+            if (authService) {
+              isLocked = authService.isLocked();
+              
+              // Try to restore session if needed
+              if (isLocked) {
+                await authService.restoreSession();
+                isLocked = authService.isLocked();
+              }
+            }
+            
             sendResponse({
               success: true,
               hasPassword: !!authData,
-              isLocked: authService?.isLocked() || true
+              isLocked: isLocked
             });
             return;
           }
@@ -150,12 +306,8 @@ export default defineBackground(() => {
 
           case 'lockKeychain': {
             if (authService) {
-              authService.lockKeychain();
+              await authService.lockKeychain();
             }
-            // Clear the keychain password from session storage
-            await LocalStorageUtils.removeValueFromSessionStorage(
-              LocalStorageKeyEnum.__MK
-            );
             sendResponse({ success: true });
             return;
           }
