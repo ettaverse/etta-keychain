@@ -278,12 +278,46 @@ export class AuthService {
   /**
    * Lock the keychain
    */
-  lockKeychain(): void {
+  async lockKeychain(): Promise<void> {
     if (this.session?.autoLockTimer) {
       clearTimeout(this.session.autoLockTimer);
     }
     this.session = null;
+    
+    // Clear session storage when explicitly locking
+    await LocalStorageUtils.removeValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+    
     logger.info(['Keychain locked']);
+    console.log('Keychain explicitly locked - session storage cleared');
+  }
+
+  /**
+   * Restore session from session storage (used after background script restart)
+   */
+  async restoreSession(): Promise<boolean> {
+    try {
+      const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+      console.log('Restore session check - MK exists:', !!keychainPassword, 'Session exists:', !!this.session);
+      
+      if (keychainPassword && !this.session) {
+        // Generate new session key since we can't recover the old one
+        const sessionKey = bytesToHex(randomBytes(32));
+        
+        this.session = {
+          sessionKey,
+          unlockTime: Date.now()
+        };
+
+        logger.info(['Session restored from session storage']);
+        console.log('Session successfully restored');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      logger.error(['Failed to restore session:', error]);
+      console.error('Failed to restore session:', error);
+      return false;
+    }
   }
 
   /**

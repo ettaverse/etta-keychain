@@ -77,6 +77,33 @@ export class KeychainApiService {
     this.accountCreationService = new AccountCreationService(accountService, transactionService);
   }
 
+  async handleRequest(event: string, data: any): Promise<KeychainResponse> {
+    console.log('KeychainApiService.handleRequest called:', event, data);
+    
+    if (event === 'swHandshake') {
+      console.log('Processing handshake request');
+      // For handshake, just return success to trigger the callback
+      return {
+        success: true,
+        message: 'Handshake successful',
+        request_id: data.request_id
+      };
+    }
+    
+    if (event === 'swRequest') {
+      // This is the main request handler
+      return await this.handleKeychainRequest(data);
+    }
+    
+    // Unknown event type
+    return {
+      success: false,
+      error: 'Unknown event type',
+      message: `Event type '${event}' is not supported`,
+      request_id: data.request_id
+    };
+  }
+
   async handleKeychainRequest(request: KeychainRequest): Promise<KeychainResponse> {
     try {
       Logger.info(`Processing keychain request: ${request.type}`, { request_id: request.request_id });

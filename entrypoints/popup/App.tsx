@@ -67,15 +67,21 @@ function AppContent() {
 
   const checkAuthState = async () => {
     try {
+      console.log('Popup checking auth state...');
       const response = await browser.runtime.sendMessage({
         action: 'getAuthState'
       });
 
+      console.log('Auth state response:', response);
+
       if (!response.hasPassword) {
+        console.log('No password set, showing setup');
         setAuthState('setup');
       } else if (response.isLocked) {
+        console.log('Keychain is locked, showing unlock screen');
         setAuthState('locked');
       } else {
+        console.log('Keychain is unlocked, showing main UI');
         setAuthState('unlocked');
       }
       setHasPassword(response.hasPassword);
