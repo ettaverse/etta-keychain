@@ -76,7 +76,7 @@ export default defineContentScript({
         this.current_id++;
       }
 
-      requestHandshake(callback: () => void): void {
+      requestHandshake(callback: (response: any) => void): void {
         console.log('Handshake requested from page');
         this.handshake_callback = callback;
         this.dispatchCustomEvent('swHandshake', {});
@@ -404,15 +404,6 @@ export default defineContentScript({
         this.dispatchCustomEvent('swRequest', request, callback);
       }
 
-      requestRemoveAccountAuthority(account: string, authorizedAccount: string, role: string, callback: any): void {
-        const request = {
-          type: 'removeAccountAuthority',
-          username: account,
-          authorized_account: authorizedAccount,
-          role
-        };
-        this.dispatchCustomEvent('swRequest', request, callback);
-      }
 
       requestRemoveKeyAuthority(account: string, key: string, role: string, callback: any): void {
         const request = {
@@ -534,8 +525,8 @@ export default defineContentScript({
         console.log('🤝 Handshake response received from content script');
         const keychain = (window as any).steem_keychain;
         if (keychain.handshake_callback) {
-          console.log('✅ Calling handshake callback');
-          keychain.handshake_callback();
+          console.log('✅ Calling handshake callback with response:', event.data.response);
+          keychain.handshake_callback(event.data.response);
         } else {
           console.log('❌ No handshake callback found');
         }

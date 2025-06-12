@@ -63,29 +63,169 @@ export default defineBackground(() => {
           switch (message.type) {
             case 'keychain_request': {
               try {
-                // Handle handshake requests simply
+                // Handle handshake requests with proper validation
                 if (message.event === 'swHandshake') {
-                  sendResponse({
-                    success: true,
-                    message: 'Handshake successful',
-                    request_id: message.data?.request_id
-                  });
+                  try {
+                    // Check if keychain is properly initialized
+                    if (!authService) {
+                      sendResponse({
+                        success: false,
+                        error: 'Keychain not initialized',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // Check if user has set up keychain password
+                    const authData = await LocalStorageUtils.getValueFromLocalStorage(LocalStorageKeyEnum.AUTH_DATA);
+                    if (!authData) {
+                      sendResponse({
+                        success: false,
+                        error: 'Keychain not set up. Please set up your keychain password first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // Check if keychain is unlocked
+                    if (authService.isLocked()) {
+                      sendResponse({
+                        success: false,
+                        error: 'Keychain is locked. Please unlock your keychain first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // Check if user has imported accounts
+                    const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+                    if (!keychainPassword) {
+                      sendResponse({
+                        success: false,
+                        error: 'Keychain session expired. Please unlock your keychain.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    const allAccounts = await accountService?.getAllAccounts(keychainPassword) || [];
+                    if (allAccounts.length === 0) {
+                      sendResponse({
+                        success: false,
+                        error: 'No accounts found. Please import an account first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // All checks passed - successful handshake
+                    sendResponse({
+                      success: true,
+                      message: 'Keychain ready',
+                      data: {
+                        version: '1.0.0',
+                        accounts: allAccounts.map(acc => acc.name),
+                        extension: 'Etta Keychain'
+                      },
+                      request_id: message.data?.request_id
+                    });
+                  } catch (error) {
+                    console.error('Handshake validation failed:', error);
+                    sendResponse({
+                      success: false,
+                      error: 'Handshake validation failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+                      request_id: message.data?.request_id
+                    });
+                  }
                   return;
                 }
                 
                 // Handle login request
                 if (message.event === 'swLogin') {
-                  console.log('🔐 Login request received');
-                  // For now, return mock account data - later implement actual account selection UI
-                  sendResponse({
-                    success: true,
-                    data: {
-                      username: 'testuser',
-                      accounts: ['testuser', 'demouser']
-                    },
-                    message: 'Login successful',
-                    request_id: message.data?.request_id
-                  });
+                  console.log('🔐 Login request received from:', sender?.origin);
+                  
+                  try {
+                    // Check if user is authenticated with keychain
+                    if (!accountService || authService?.isLocked()) {
+                      sendResponse({ 
+                        success: false, 
+                        error: 'Keychain is locked. Please unlock your keychain first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    const keychainPassword = await LocalStorageUtils.getValueFromSessionStorage(LocalStorageKeyEnum.__MK);
+                    if (!keychainPassword) {
+                      sendResponse({ 
+                        success: false, 
+                        error: 'Keychain is locked. Please unlock your keychain first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // Get available accounts
+                    const allAccounts = await accountService.getAllAccounts(keychainPassword);
+                    if (allAccounts.length === 0) {
+                      sendResponse({ 
+                        success: false, 
+                        error: 'No accounts found. Please import an account first.',
+                        request_id: message.data?.request_id
+                      });
+                      return;
+                    }
+
+                    // Create authorization request
+                    const authRequest = {
+                      id: message.data?.request_id || Date.now().toString(),
+                      origin: sender?.origin || 'unknown',
+                      domain: new URL(sender?.origin || 'https://unknown.com').hostname,
+                      requestedPermissions: ['posting'], // Default to posting permission
+                      timestamp: Date.now()
+                    };
+
+                    // For now, use the first account (later allow user selection)
+                    const selectedAccount = allAccounts[0];
+
+                    // Generate and store authorization token
+                    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                      .map(b => b.toString(16).padStart(2, '0'))
+                      .join('');
+
+                    const authRecord = {
+                      token: token,
+                      domain: authRequest.domain,
+                      account: selectedAccount.name,
+                      permissions: authRequest.requestedPermissions,
+                      granted: Date.now(),
+                      expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+                    };
+
+                    // Store authorization
+                    const authorizations = await LocalStorageUtils.getValueFromLocalStorage('authorizations') || [];
+                    authorizations.push(authRecord);
+                    await LocalStorageUtils.saveValueInLocalStorage('authorizations', authorizations);
+
+                    // Return success with account info
+                    sendResponse({
+                      success: true,
+                      data: {
+                        username: selectedAccount.name,
+                        accounts: allAccounts.map(acc => acc.name),
+                        authToken: token
+                      },
+                      message: 'Login successful',
+                      request_id: message.data?.request_id
+                    });
+                  } catch (error) {
+                    console.error('Login request failed:', error);
+                    sendResponse({ 
+                      success: false, 
+                      error: 'Login failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+                      request_id: message.data?.request_id
+                    });
+                  }
                   return;
                 }
                 
@@ -392,6 +532,65 @@ export default defineBackground(() => {
             } catch (error) {
               console.error('Failed to get accounts', error);
               sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+            }
+            return;
+          }
+
+          case 'storeAuthorization': {
+            try {
+              const authorizations = await LocalStorageUtils.getValueFromLocalStorage('authorizations') || [];
+              authorizations.push(message.authorization);
+              await LocalStorageUtils.saveValueInLocalStorage('authorizations', authorizations);
+              sendResponse({ success: true });
+            } catch (error) {
+              sendResponse({ success: false, error: 'Failed to store authorization' });
+            }
+            return;
+          }
+
+          case 'getAuthorizations': {
+            try {
+              const authorizations = await LocalStorageUtils.getValueFromLocalStorage('authorizations') || [];
+              // Clean up expired authorizations
+              const now = Date.now();
+              const validAuthorizations = authorizations.filter((auth: any) => auth.expires > now);
+              if (validAuthorizations.length !== authorizations.length) {
+                await LocalStorageUtils.saveValueInLocalStorage('authorizations', validAuthorizations);
+              }
+              sendResponse({ success: true, authorizations: validAuthorizations });
+            } catch (error) {
+              sendResponse({ success: false, error: 'Failed to get authorizations' });
+            }
+            return;
+          }
+
+          case 'revokeAuthorization': {
+            try {
+              const authorizations = await LocalStorageUtils.getValueFromLocalStorage('authorizations') || [];
+              const updatedAuthorizations = authorizations.filter((auth: any) => auth.token !== message.token);
+              await LocalStorageUtils.saveValueInLocalStorage('authorizations', updatedAuthorizations);
+              sendResponse({ success: true });
+            } catch (error) {
+              sendResponse({ success: false, error: 'Failed to revoke authorization' });
+            }
+            return;
+          }
+
+          case 'validateAuthToken': {
+            try {
+              const authorizations = await LocalStorageUtils.getValueFromLocalStorage('authorizations') || [];
+              const auth = authorizations.find((a: any) => 
+                a.token === message.token && 
+                a.domain === message.domain &&
+                a.expires > Date.now()
+              );
+              sendResponse({ 
+                success: true, 
+                valid: !!auth,
+                authorization: auth
+              });
+            } catch (error) {
+              sendResponse({ success: false, error: 'Failed to validate token' });
             }
             return;
           }

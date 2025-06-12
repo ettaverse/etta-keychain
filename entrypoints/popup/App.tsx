@@ -6,6 +6,7 @@ import { AccountList } from './components/AccountList';
 import { AccountImportForm } from './components/AccountImportForm';
 import { AccountConnection } from './pages/AccountConnection';
 import { AccountDetails } from './pages/AccountDetails';
+import { AuthorizationManager } from './components/AuthorizationManager';
 import { Button } from '@/components/ui/button';
 import { browser } from 'wxt/browser';
 
@@ -22,9 +23,14 @@ function AccountsPage({ onLock }: { onLock: () => void }) {
             <h1 className="text-xl font-semibold text-foreground">Etta Keychain</h1>
             <p className="text-sm text-muted-foreground">Secure STEEM wallet</p>
           </div>
-          <Button variant="outline" size="sm" onClick={onLock} className="text-xs">
-            Lock
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/authorizations')} className="text-xs">
+              Auth
+            </Button>
+            <Button variant="outline" size="sm" onClick={onLock} className="text-xs">
+              Lock
+            </Button>
+          </div>
         </div>
       </div>
       <div className="p-4">
@@ -53,6 +59,29 @@ function ImportPage() {
   return (
     <div className="min-h-[400px] w-[350px] p-6">
       <AccountImportForm onImportSuccess={() => navigate('/accounts')} />
+    </div>
+  );
+}
+
+function AuthorizationsPage() {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="min-h-[500px] w-[380px] bg-background">
+      <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/accounts')}>
+            ← Back
+          </Button>
+          <div>
+            <h1 className="text-lg font-semibold">Site Authorizations</h1>
+            <p className="text-xs text-muted-foreground">Manage authorized websites</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-4">
+        <AuthorizationManager />
+      </div>
     </div>
   );
 }
@@ -132,6 +161,7 @@ function AppContent() {
       <Route path="/accounts" element={<AccountsPage onLock={handleLock} />} />
       <Route path="/connection" element={<ConnectionPage />} />
       <Route path="/import" element={<ImportPage />} />
+      <Route path="/authorizations" element={<AuthorizationsPage />} />
       <Route path="/account/:username" element={
         <div className="min-h-[400px] w-[350px]">
           <AccountDetails />
