@@ -28,7 +28,7 @@ class MockEttaKeychainAPI implements SteemKeychain {
   current_id = 1;
   requests: Record<number, RequestCallback> = {};
   timeouts: Record<number, NodeJS.Timeout> = {};
-  handshake_callback: (() => void) | null = null;
+  handshake_callback: ((response: KeychainResponse) => void) | null = null;
 
   private dispatchCustomEvent(name: string, data: any, callback?: RequestCallback): void {
     const requestId = this.current_id;
@@ -89,7 +89,7 @@ class MockEttaKeychainAPI implements SteemKeychain {
     }
   }
 
-  requestHandshake(callback: () => void): void {
+  requestHandshake(callback: (response: KeychainResponse) => void): void {
     this.handshake_callback = callback;
     this.dispatchCustomEvent('swHandshake', {});
   }
@@ -216,6 +216,48 @@ class MockEttaKeychainAPI implements SteemKeychain {
       method: keyType
     };
     this.dispatchCustomEvent('swRequest', request, callback);
+  }
+
+  requestPost(
+    account: string,
+    title: string,
+    body: string,
+    parentPermlink: string,
+    tags: string[],
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestWitnessVote(
+    account: string,
+    witness: string,
+    approve: boolean,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestPowerUp(
+    account: string,
+    to: string,
+    amount: string,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestSignBuffer(
+    account: string,
+    message: string,
+    keyType: KeyType,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
   }
 }
 
@@ -500,7 +542,7 @@ describe('Content Script - STEEM Keychain API Implementation', () => {
       
       // Simulate handshake response
       if (keychainAPI.handshake_callback) {
-        keychainAPI.handshake_callback();
+        keychainAPI.handshake_callback({ success: true });
       }
       
       expect(handshakeCallback).toHaveBeenCalled();

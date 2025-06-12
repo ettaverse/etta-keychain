@@ -10,11 +10,7 @@ interface ResponseItem {
   timestamp: string;
 }
 
-declare global {
-  interface Window {
-    steem_keychain?: any;
-  }
-}
+// Remove duplicate global declaration - it's already in the main project
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

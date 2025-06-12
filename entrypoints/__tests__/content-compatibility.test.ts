@@ -11,7 +11,7 @@ import type { SteemKeychain, RequestCallback, KeychainResponse } from '../interf
 class CompatibilityTestAPI implements SteemKeychain {
   current_id = 1;
   requests: Record<number, RequestCallback> = {};
-  handshake_callback: (() => void) | null = null;
+  handshake_callback: ((response: KeychainResponse) => void) | null = null;
 
   private dispatchCustomEvent(name: string, data: any, callback?: RequestCallback): void {
     if (callback) {
@@ -30,7 +30,7 @@ class CompatibilityTestAPI implements SteemKeychain {
     this.current_id++;
   }
 
-  requestHandshake(callback: () => void): void {
+  requestHandshake(callback: (response: KeychainResponse) => void): void {
     this.handshake_callback = callback;
     this.dispatchCustomEvent('swHandshake', {});
   }
@@ -157,6 +157,48 @@ class CompatibilityTestAPI implements SteemKeychain {
       method: keyType
     };
     this.dispatchCustomEvent('swRequest', request, callback);
+  }
+
+  requestPost(
+    account: string,
+    title: string,
+    body: string,
+    parentPermlink: string,
+    tags: string[],
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestWitnessVote(
+    account: string,
+    witness: string,
+    approve: boolean,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestPowerUp(
+    account: string,
+    to: string,
+    amount: string,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestSignBuffer(
+    account: string,
+    message: string,
+    keyType: 'Posting' | 'Active' | 'Owner' | 'Memo',
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
   }
 }
 
@@ -606,7 +648,7 @@ describe('STEEM Keychain API Compatibility', () => {
 
       expect(api.handshake_callback).toBeDefined();
       if (api.handshake_callback) {
-        api.handshake_callback();
+        api.handshake_callback({ success: true });
       }
       expect(keychainDetected).toBe(true);
     });

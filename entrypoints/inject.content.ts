@@ -17,7 +17,7 @@ export default defineContentScript({
       current_id = 1;
       requests: Record<number, any> = {};
       timeouts: Record<number, any> = {};
-      handshake_callback: (() => void) | null = null;
+      handshake_callback: ((response: any) => void) | null = null;
       
       // Properties that dApps might check
       isConnected = true;

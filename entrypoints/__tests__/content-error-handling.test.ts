@@ -17,7 +17,7 @@ const mockBrowser = {
 class TestKeychainAPI implements SteemKeychain {
   current_id = 1;
   requests: Record<number, RequestCallback> = {};
-  handshake_callback: (() => void) | null = null;
+  handshake_callback: ((response: KeychainResponse) => void) | null = null;
   timeouts: Record<number, NodeJS.Timeout> = {};
 
   private dispatchCustomEvent(name: string, data: any, callback?: RequestCallback): void {
@@ -100,7 +100,7 @@ class TestKeychainAPI implements SteemKeychain {
     }
   }
 
-  requestHandshake(callback: () => void): void {
+  requestHandshake(callback: (response: KeychainResponse) => void): void {
     this.handshake_callback = callback;
     this.dispatchCustomEvent('swHandshake', {});
   }
@@ -178,6 +178,48 @@ class TestKeychainAPI implements SteemKeychain {
       message,
       method: keyType
     }, callback);
+  }
+
+  requestPost(
+    account: string,
+    title: string,
+    body: string,
+    parentPermlink: string,
+    tags: string[],
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestWitnessVote(
+    account: string,
+    witness: string,
+    approve: boolean,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestPowerUp(
+    account: string,
+    to: string,
+    amount: string,
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestSignBuffer(
+    account: string,
+    message: string,
+    keyType: 'Posting' | 'Active' | 'Owner' | 'Memo',
+    callback: RequestCallback,
+    rpc?: string
+  ): void {
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
   }
 }
 

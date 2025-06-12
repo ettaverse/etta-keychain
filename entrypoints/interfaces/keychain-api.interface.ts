@@ -28,13 +28,13 @@ export interface KeychainRequest {
 export interface SteemKeychain {
   current_id: number;
   requests: Record<number, RequestCallback>;
-  handshake_callback: (() => void) | null;
+  handshake_callback: ((response: KeychainResponse) => void) | null;
 
   /**
    * This function is called to verify Keychain installation on a user's device
-   * @param callback Confirms Keychain installation (has no parameters)
+   * @param callback Confirms Keychain installation (receives response)
    */
-  requestHandshake(callback: () => void): void;
+  requestHandshake(callback: (response: KeychainResponse) => void): void;
 
   /**
    * This function is called to verify that the user has a certain authority over an account, by requesting to decode a message
@@ -151,6 +151,74 @@ export interface SteemKeychain {
     message: string,
     keyType: KeyType,
     callback: RequestCallback
+  ): void;
+
+  /**
+   * Requests a post/comment
+   * @param account Steem account to perform the request
+   * @param title Title of the post
+   * @param body Body of the post
+   * @param parentPermlink Parent permlink (empty for posts)
+   * @param tags Array of tags
+   * @param callback Function that handles Keychain's response to the request
+   * @param rpc Override user's RPC settings
+   */
+  requestPost(
+    account: string,
+    title: string,
+    body: string,
+    parentPermlink: string,
+    tags: string[],
+    callback: RequestCallback,
+    rpc?: string
+  ): void;
+
+  /**
+   * Requests a witness vote
+   * @param account Steem account to perform the request
+   * @param witness Witness name to vote for
+   * @param approve Whether to approve or disapprove the witness
+   * @param callback Function that handles Keychain's response to the request
+   * @param rpc Override user's RPC settings
+   */
+  requestWitnessVote(
+    account: string,
+    witness: string,
+    approve: boolean,
+    callback: RequestCallback,
+    rpc?: string
+  ): void;
+
+  /**
+   * Requests a power up operation
+   * @param account Steem account to perform the request
+   * @param to Account to power up (can be same as account)
+   * @param amount Amount to power up
+   * @param callback Function that handles Keychain's response to the request
+   * @param rpc Override user's RPC settings
+   */
+  requestPowerUp(
+    account: string,
+    to: string,
+    amount: string,
+    callback: RequestCallback,
+    rpc?: string
+  ): void;
+
+  /**
+   * Requests signing a buffer/message
+   * @param account Steem account to perform the request
+   * @param message Message to sign
+   * @param keyType Type of key to use for signing
+   * @param callback Function that handles Keychain's response to the request
+   * @param rpc Override user's RPC settings
+   */
+  requestSignBuffer(
+    account: string,
+    message: string,
+    keyType: KeyType,
+    callback: RequestCallback,
+    rpc?: string
   ): void;
 }
 

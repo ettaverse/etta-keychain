@@ -10,12 +10,12 @@ import type { SteemKeychain } from '../interfaces/keychain-api.interface';
 class DemoKeychainAPI implements SteemKeychain {
   current_id = 1;
   requests: Record<number, any> = {};
-  handshake_callback: (() => void) | null = null;
+  handshake_callback: ((response: any) => void) | null = null;
 
-  requestHandshake(callback: () => void): void {
+  requestHandshake(callback: (response: any) => void): void {
     this.handshake_callback = callback;
     // Simulate successful injection
-    setTimeout(() => callback(), 0);
+    setTimeout(() => callback({ success: true }), 0);
   }
 
   requestVerifyKey(account: string, message: string, keyType: any, callback: any): void {
@@ -94,6 +94,26 @@ class DemoKeychainAPI implements SteemKeychain {
         request_id: id
       });
     }, 0);
+  }
+
+  requestPost(account: string, title: string, body: string, parentPermlink: string, tags: string[], callback: any): void {
+    // Stub implementation
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestWitnessVote(account: string, witness: string, approve: boolean, callback: any): void {
+    // Stub implementation
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestPowerUp(account: string, to: string, amount: string, callback: any): void {
+    // Stub implementation
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
+  }
+
+  requestSignBuffer(account: string, message: string, keyType: any, callback: any): void {
+    // Stub implementation
+    setTimeout(() => callback({ success: false, error: "Not implemented" }), 0);
   }
 }
 
