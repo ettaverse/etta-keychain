@@ -19,7 +19,10 @@ vi.mock('../../../../src/utils/localStorage.utils', () => ({
   default: {
     getValueFromLocalStorage: vi.fn(),
     saveValueInLocalStorage: vi.fn(),
+    removeValueFromLocalStorage: vi.fn(),
+    getValueFromSessionStorage: vi.fn(),
     saveValueInSessionStorage: vi.fn(),
+    removeValueFromSessionStorage: vi.fn(),
   },
 }));
 
