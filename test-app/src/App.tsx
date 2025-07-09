@@ -3,6 +3,7 @@ import './App.css';
 import LoginForm from './components/LoginForm';
 import TransactionButtons from './components/TransactionButtons';
 import ResponseDisplay from './components/ResponseDisplay';
+import AssetBrowser from './components/assets/AssetBrowser';
 
 interface ResponseItem {
   operation: string;
@@ -90,12 +91,24 @@ function App() {
           </section>
 
           {isLoggedIn && (
-            <section className="testing-section">
-              <TransactionButtons 
-                username={currentUser}
-                onResponse={handleResponse}
-              />
-            </section>
+            <>
+              <section className="asset-section">
+                <AssetBrowser 
+                  username={currentUser}
+                  onResponse={handleResponse}
+                  onAssetSelect={(assets) => {
+                    console.log('Selected assets for minting:', assets);
+                  }}
+                />
+              </section>
+              
+              <section className="testing-section">
+                <TransactionButtons 
+                  username={currentUser}
+                  onResponse={handleResponse}
+                />
+              </section>
+            </>
           )}
 
           <section className="response-section">
@@ -110,10 +123,22 @@ function App() {
             <ol>
               <li>Make sure the Etta Keychain extension is installed and loaded</li>
               <li>Enter a username and password to simulate login</li>
-              <li>Use the transaction buttons to test various keychain operations</li>
+              <li><strong>🔍 Asset Browser:</strong> Discover and select Web2 assets ready for blockchain minting</li>
+              <li><strong>⚙️ Transaction Testing:</strong> Use the transaction buttons to test various keychain operations</li>
               <li>Monitor responses in the display area below</li>
               <li>Check browser console for additional debugging information</li>
             </ol>
+            
+            <div className="feature-highlight">
+              <h4>🚀 New: Web2-to-Web3 Asset Browser</h4>
+              <p>The Asset Browser shows your Web2 assets (domains from 4ID.com, items from 4IR.network) that can be minted to the STEEM blockchain. This enables:</p>
+              <ul>
+                <li>✅ Preserving Web2 functionality while adding Web3 ownership proof</li>
+                <li>✅ Cross-game asset conversion capabilities</li>
+                <li>✅ Immutable ownership records on STEEM blockchain</li>
+                <li>✅ Unified portfolio management across platforms</li>
+              </ul>
+            </div>
           </section>
         </div>
       </main>

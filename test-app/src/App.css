@@ -437,6 +437,61 @@
   margin-bottom: 0.5rem;
 }
 
+/* Feature Highlight Styles */
+.feature-highlight {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.feature-highlight h4 {
+  color: white;
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+}
+
+.feature-highlight p {
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.feature-highlight ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style-type: none;
+}
+
+.feature-highlight li {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+  opacity: 0.95;
+  position: relative;
+}
+
+.feature-highlight li:before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 0.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #4ade80;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(74, 222, 128, 0.4);
+}
+
+/* Asset Section Styles */
+.asset-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .App-main {
