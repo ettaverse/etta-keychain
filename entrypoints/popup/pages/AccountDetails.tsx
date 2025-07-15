@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AssetPortfolioView } from '../components/AssetPortfolioView';
+import { AssetMintForm } from '../components/AssetMintForm';
+import { AssetTransferForm } from '../components/AssetTransferForm';
 import type { Keys } from '@/src/interfaces';
 
 interface AccountDetailsData {
@@ -24,6 +28,21 @@ export const AccountDetails = () => {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKeys, setCopiedKeys] = useState<Set<string>>(new Set());
   const [masterPassword, setMasterPassword] = useState<string | null>(null);
+  
+  // Portfolio and operations state
+  const [activeTab, setActiveTab] = useState<'keys' | 'portfolio' | 'operations'>('keys');
+  const [operationMode, setOperationMode] = useState<'overview' | 'mint' | 'transfer' | null>('overview');
+  const [selectedAssets, setSelectedAssets] = useState<any[]>([]);
+  const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+
+  // Handle URL parameters for tab switching
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['keys', 'portfolio', 'operations'].includes(tabParam)) {
+      setActiveTab(tabParam as 'keys' | 'portfolio' | 'operations');
+    }
+  }, []);
 
   useEffect(() => {
     const loadAccountDetails = async () => {
@@ -112,6 +131,46 @@ export const AccountDetails = () => {
       master: 'Master password'
     };
     return descriptions[keyType] || '';
+  };
+
+  // Portfolio operation handlers
+  const handleViewFullPortfolio = () => {
+    setActiveTab('portfolio');
+  };
+
+  const handleMintAssets = (assets: any[]) => {
+    setSelectedAssets(assets);
+    setOperationMode('mint');
+    setActiveTab('operations');
+  };
+
+  const handleTransferAsset = (asset: any) => {
+    setSelectedAsset(asset);
+    setOperationMode('transfer');
+    setActiveTab('operations');
+  };
+
+  const handleRefreshPortfolio = () => {
+    // Trigger portfolio refresh logic here
+    console.log('Refreshing portfolio...');
+  };
+
+  const handleMintSubmit = (mintingRequest: any) => {
+    console.log('Submitting mint request:', mintingRequest);
+    // Handle minting logic here
+    setOperationMode('overview');
+  };
+
+  const handleTransferSubmit = (transferRequest: any) => {
+    console.log('Submitting transfer request:', transferRequest);
+    // Handle transfer logic here
+    setOperationMode('overview');
+  };
+
+  const handleOperationCancel = () => {
+    setOperationMode('overview');
+    setSelectedAssets([]);
+    setSelectedAsset(null);
   };
 
   const renderKeyCard = (keyType: string, publicKey: string | undefined, privateKey: string | undefined, isPassword = false) => {
@@ -237,6 +296,96 @@ export const AccountDetails = () => {
     );
   }
 
+  const renderKeysContent = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Keys</h2>
+        
+        {account?.isMasterPassword && masterPassword && (
+          <>
+            {renderKeyCard('master', undefined, masterPassword, true)}
+            <Separator className="my-6" />
+          </>
+        )}
+
+        {keys && (
+          <>
+            {renderKeyCard('posting', keys.postingPubkey, keys.posting)}
+            {renderKeyCard('active', keys.activePubkey, keys.active)}
+            {renderKeyCard('memo', keys.memoPubkey, keys.memo)}
+            {renderKeyCard('owner', keys.ownerPubkey, keys.owner)}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderPortfolioContent = () => {
+    if (!username) return null;
+    
+    return (
+      <AssetPortfolioView
+        username={username}
+        onViewFullPortfolio={handleViewFullPortfolio}
+        onMintAssets={handleMintAssets}
+        onTransferAsset={handleTransferAsset}
+        onRefresh={handleRefreshPortfolio}
+      />
+    );
+  };
+
+  const renderOperationsContent = () => {
+    if (!username) return null;
+
+    if (operationMode === 'mint' && selectedAssets.length > 0) {
+      return (
+        <AssetMintForm
+          selectedAssets={selectedAssets}
+          currentAccount={username}
+          onSubmit={handleMintSubmit}
+          onCancel={handleOperationCancel}
+        />
+      );
+    }
+
+    if (operationMode === 'transfer' && selectedAsset) {
+      return (
+        <AssetTransferForm
+          asset={selectedAsset}
+          currentAccount={username}
+          onSubmit={handleTransferSubmit}
+          onCancel={handleOperationCancel}
+        />
+      );
+    }
+
+    // Default overview state
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Asset Operations</CardTitle>
+            <CardDescription>
+              Manage your blockchain assets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Select assets from the Portfolio tab to mint or transfer them.
+            </p>
+            <Button 
+              onClick={() => setActiveTab('portfolio')} 
+              className="mt-4"
+              variant="outline"
+            >
+              Go to Portfolio
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -264,23 +413,25 @@ export const AccountDetails = () => {
 
       <Separator className="mb-6" />
 
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Keys</h2>
-          
-          {account.isMasterPassword && masterPassword && (
-            <>
-              {renderKeyCard('master', undefined, masterPassword, true)}
-              <Separator className="my-6" />
-            </>
-          )}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'keys' | 'portfolio' | 'operations')}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="keys">🔑 Keys</TabsTrigger>
+          <TabsTrigger value="portfolio">📊 Portfolio</TabsTrigger>
+          <TabsTrigger value="operations">⚙️ Operations</TabsTrigger>
+        </TabsList>
 
-          {renderKeyCard('posting', keys.postingPubkey, keys.posting)}
-          {renderKeyCard('active', keys.activePubkey, keys.active)}
-          {renderKeyCard('memo', keys.memoPubkey, keys.memo)}
-          {renderKeyCard('owner', keys.ownerPubkey, keys.owner)}
-        </div>
-      </div>
+        <TabsContent value="keys" className="mt-6">
+          {renderKeysContent()}
+        </TabsContent>
+
+        <TabsContent value="portfolio" className="mt-6">
+          {renderPortfolioContent()}
+        </TabsContent>
+
+        <TabsContent value="operations" className="mt-6">
+          {renderOperationsContent()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

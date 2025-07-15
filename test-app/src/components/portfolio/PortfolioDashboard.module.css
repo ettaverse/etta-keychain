@@ -1,0 +1,505 @@
+.portfolioContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.portfolioHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.portfolioHeader h2 {
+  color: #374151;
+  margin: 0;
+  font-size: 28px;
+}
+
+.refreshButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.refreshButton:hover {
+  background: #2563eb;
+}
+
+.portfolioSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.summaryCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.summaryValue {
+  font-size: 32px;
+  font-weight: bold;
+  color: #3b82f6;
+  margin-bottom: 8px;
+}
+
+.summaryLabel {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.controlsSection {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filtersRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filterSelect,
+.sortSelect {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.filterSelect:focus,
+.sortSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.controlsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.viewToggle {
+  display: flex;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.viewButton,
+.viewButtonActive {
+  padding: 8px 16px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.viewButtonActive {
+  background: #3b82f6;
+  color: white;
+}
+
+.viewButton:hover {
+  background: #f3f4f6;
+}
+
+.sortControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sortOrderButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.sortOrderButton:hover {
+  background: #4b5563;
+}
+
+.batchActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.selectionInfo {
+  font-weight: 500;
+  color: #374151;
+}
+
+.batchButton {
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.batchButton:hover {
+  background: #7c3aed;
+}
+
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.assetsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.assetCard {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.assetCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.assetCardSelected {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.assetImage {
+  width: 100%;
+  height: 160px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #f3f4f6;
+}
+
+.assetImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholderImage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #9ca3af;
+}
+
+.assetInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assetName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.assetDescription {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.assetMetadata {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.assetDomain {
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.statusMinted {
+  background: #10b981;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusUnminted {
+  background: #f59e0b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusPending {
+  background: #8b5cf6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.assetValue {
+  font-weight: 600;
+  color: #10b981;
+  font-size: 14px;
+}
+
+.assetActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actionButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+  flex: 1;
+}
+
+.actionButton:hover {
+  background: #4b5563;
+}
+
+.emptyResults {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recentActivity {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recentActivity h3 {
+  color: #374151;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.activityAction {
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+.activityAsset {
+  color: #374151;
+  flex: 1;
+  margin: 0 12px;
+}
+
+.activityTime {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.loadingState,
+.errorState,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorState h3,
+.emptyState h3 {
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.errorState p,
+.emptyState p {
+  color: #6b7280;
+  margin: 0 0 16px 0;
+}
+
+.retryButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .portfolioContainer {
+    padding: 12px;
+  }
+  
+  .portfolioHeader {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .portfolioSummary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filtersRow {
+    flex-direction: column;
+  }
+  
+  .controlsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .assetsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  
+  .batchActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .activityItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

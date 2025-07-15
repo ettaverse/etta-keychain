@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronRight, Plus, Trash2, User, Key, Shield, Mail, Edit3 } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, User, Key, Shield, Mail, Edit3, Wallet, Coins } from 'lucide-react';
 
 interface Account {
   name: string;
@@ -203,14 +203,35 @@ export function AccountList({ onAddAccount }: AccountListProps) {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/account/${account.name}?tab=portfolio`)}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-blue-50 hover:text-blue-600"
+                    title="View Portfolio"
+                  >
+                    <Wallet className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/account/${account.name}?tab=operations`)}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-green-50 hover:text-green-600"
+                    title="Asset Operations"
+                  >
+                    <Coins className="h-4 w-4" />
+                  </Button>
+
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate(`/account/${account.name}`)}
-                    className="h-10 w-10 p-0 rounded-full hover:bg-primary/10"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+                    title="View Account Details"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                   
                   <Dialog>

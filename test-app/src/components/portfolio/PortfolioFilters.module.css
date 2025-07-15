@@ -1,0 +1,546 @@
+.filtersContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.filtersHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.expandButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #374151;
+  padding: 0;
+}
+
+.expandButton:hover {
+  color: #3b82f6;
+}
+
+.activeFiltersCount {
+  background: #3b82f6;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.chevronDown,
+.chevronUp {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.presetButton,
+.clearButton {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.presetButton:hover {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+}
+
+.clearButton:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.clearButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quickSearch {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.sortControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sortSelect {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.sortOrderButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.sortOrderButton:hover {
+  background: #4b5563;
+}
+
+.expandedFilters {
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.filterSection {
+  margin-bottom: 24px;
+}
+
+.filterSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.filterSelect:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.propertiesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.propertyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.propertyLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.toggleButtons {
+  display: flex;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.toggleButton,
+.toggleActive {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  background: #f3f4f6;
+}
+
+.toggleActive {
+  background: #3b82f6;
+  color: white;
+}
+
+.toggleButton:not(:last-child),
+.toggleActive:not(:last-child) {
+  border-right: 1px solid #e5e7eb;
+}
+
+.priceRangeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.priceInput {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priceLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.priceField {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.priceField:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.currencySelect {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  min-width: 80px;
+}
+
+.currencySelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.dateRangeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dateInput {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dateLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.dateField {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.dateField:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.tagsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tagInput {
+  display: flex;
+  gap: 8px;
+}
+
+.tagField {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.tagField:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.addTagButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.addTagButton:hover {
+  background: #2563eb;
+}
+
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.removeTagButton {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.removeTagButton:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.presetsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.presetItem {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.presetItem:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.presetDialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialogContent {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.dialogContent h4 {
+  color: #374151;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.presetNameInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.presetNameInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.saveButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background: #2563eb;
+}
+
+.cancelButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background: #4b5563;
+}
+
+@media (max-width: 768px) {
+  .filtersHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .quickSearch {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .sortControls {
+    justify-content: center;
+  }
+  
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .propertiesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .priceRangeGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dateRangeGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tagInput {
+    flex-direction: column;
+  }
+  
+  .presetsList {
+    flex-direction: column;
+  }
+  
+  .presetItem {
+    text-align: center;
+  }
+}

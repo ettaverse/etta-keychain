@@ -1,0 +1,592 @@
+.collectionsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.collectionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.collectionsHeader h2 {
+  color: #374151;
+  margin: 0;
+  font-size: 28px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.breadcrumbLink {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+.breadcrumbLink:hover {
+  color: #2563eb;
+}
+
+.refreshButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.refreshButton:hover {
+  background: #2563eb;
+}
+
+.gamesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.gameCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.gameCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.gameHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.gameIcon {
+  font-size: 48px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.gameInfo {
+  flex: 1;
+}
+
+.gameName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.gameDescription {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.gameStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.gameStat {
+  text-align: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.statValue {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #3b82f6;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.gameFeatures {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.gameFeaturesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.featureTag {
+  background: #3b82f6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.collectionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.collectionCard {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.collectionCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.collectionImage {
+  width: 100%;
+  height: 160px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.collectionImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholderImage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #9ca3af;
+}
+
+.collectionInfo {
+  padding: 16px;
+}
+
+.collectionName {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.collectionDescription {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.collectionStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.collectionStat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.collectionStat .statLabel {
+  color: #6b7280;
+}
+
+.collectionStat .statValue {
+  color: #374151;
+  font-weight: 500;
+}
+
+.rarityDistribution {
+  margin-bottom: 16px;
+}
+
+.rarityLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.rarityTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rarityTag {
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.completionBar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.completionFill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.assetsSection {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.collectionHeader {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.collectionHeader h3 {
+  color: #374151;
+  margin: 0 0 8px 0;
+  font-size: 22px;
+}
+
+.collectionMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.collectionValue {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.assetCard {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  border: 1px solid #e5e7eb;
+}
+
+.assetCard:hover {
+  background: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.assetImage {
+  width: 100%;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #e5e7eb;
+}
+
+.assetImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.assetInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assetName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.assetDescription {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.assetMetadata {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.assetRarity {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  background: rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.statusMinted {
+  background: #10b981;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusUnminted {
+  background: #f59e0b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusPending {
+  background: #8b5cf6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.assetValue {
+  font-weight: 600;
+  color: #10b981;
+  font-size: 14px;
+}
+
+.gameVariants {
+  background: #f3f4f6;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.variantInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.variantGame {
+  font-weight: 500;
+  color: #374151;
+}
+
+.variantStats {
+  display: flex;
+  gap: 8px;
+}
+
+.variantStat {
+  color: #6b7280;
+}
+
+.assetActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actionButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+  flex: 1;
+}
+
+.actionButton:hover {
+  background: #4b5563;
+}
+
+.emptyAssets {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.emptyAssets p {
+  margin: 0 0 8px 0;
+}
+
+.loadingState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorState h3 {
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.errorState p {
+  color: #6b7280;
+  margin: 0 0 16px 0;
+}
+
+.retryButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .collectionsContainer {
+    padding: 12px;
+  }
+  
+  .collectionsHeader {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .breadcrumb {
+    justify-content: center;
+  }
+  
+  .gamesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .gameStats {
+    grid-template-columns: 1fr;
+  }
+  
+  .collectionsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .collectionStats {
+    grid-template-columns: 1fr;
+  }
+  
+  .assetsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .collectionMeta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .assetActions {
+    flex-direction: column;
+  }
+}

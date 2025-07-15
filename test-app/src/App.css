@@ -492,6 +492,54 @@
   overflow: hidden;
 }
 
+/* Tab Navigation Styles */
+.navigation-tabs {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.tab-container {
+  display: flex;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background: white;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.tab-button:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.tab-button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  background: #f8faff;
+}
+
+/* Tab Content Styles */
+.tab-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+  min-height: 400px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .App-main {
