@@ -165,6 +165,7 @@ export class AssetDiscoveryService {
           has_next: (filters.page || 1) * (filters.limit || 20) < filteredAssets.length,
           has_previous: (filters.page || 1) > 1
         },
+        applied_filters: filters,
         search_metadata: {
           query_time_ms: searchTime,
           total_scanned: registryResult.total_count,
@@ -311,7 +312,7 @@ export class AssetDiscoveryService {
           // Count recent transfers based on timeframe
           const cutoffDate = this.getTimeframeCutoff(timeframe);
           const recentTransfers = history.filter(tx => 
-            tx.operation_type === 'asset_transfer' && 
+            tx.operation_type === 'transfer' && 
             new Date(tx.timestamp) > cutoffDate
           );
           
@@ -506,8 +507,8 @@ export class AssetDiscoveryService {
       if (!game) return assets;
       
       return assets.filter(asset => {
-        // Check if asset type is supported by the game
-        return game.asset_integration.supported_asset_types.includes(asset.asset_type);
+        // Check if asset archetype is supported by the game
+        return game.asset_integration.supported_asset_types.includes(asset.core_essence.archetype);
       });
       
     } catch (error) {
@@ -712,7 +713,7 @@ export class AssetDiscoveryService {
     const result = await this.searchAssets(filters);
     
     result.assets.forEach(asset => {
-      const matchingTags = asset.base_metadata.tags.filter(tag => interests.includes(tag));
+      const matchingTags = asset.base_metadata.tags.filter((tag: string) => interests.includes(tag));
       recommendations.push({
         asset,
         reason: `Matches your interests: ${matchingTags.join(', ')}`,

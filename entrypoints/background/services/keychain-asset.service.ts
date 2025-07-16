@@ -14,12 +14,12 @@ import {
   AssetKeychainError,
   AssetOperationResult,
   AssetOperationType
-} from '../interfaces/keychain-asset-api.interface';
-import { KeychainResponse, RequestCallback } from '../interfaces/keychain-api.interface';
+} from '../../interfaces/keychain-asset-api.interface';
+import { KeychainResponse, RequestCallback } from '../../interfaces/keychain-api.interface';
 import { AssetServiceManager } from './assets';
 import { AssetBlockchainService } from './asset-blockchain.service';
-import { UniversalAsset, AssetCreationRequest } from '../../lib/assets/types';
-import Logger from '../../src/utils/logger.utils';
+import { UniversalAsset, AssetCreationRequest } from '../../../lib/assets/types';
+import Logger from '../../../src/utils/logger.utils';
 
 export class KeychainAssetService implements EttaKeychainAssetAPI, AssetOperationValidation, AssetOperationCosts, AssetPreviewAPI {
   private static instance: KeychainAssetService;
@@ -471,11 +471,11 @@ export class KeychainAssetService implements EttaKeychainAssetAPI, AssetOperatio
         };
       }
 
-      // Check if asset type is supported by target game
-      if (!targetGame.asset_integration.supported_asset_types.includes(asset.asset_type)) {
+      // Check if asset archetype is supported by target game
+      if (!targetGame.asset_integration.supported_asset_types.includes(asset.core_essence.archetype)) {
         return {
           valid: false,
-          errors: [`Asset type ${asset.asset_type} is not supported by game ${toGame}`],
+          errors: [`Asset archetype ${asset.core_essence.archetype} is not supported by game ${toGame}`],
           conversionPossible: false
         };
       }

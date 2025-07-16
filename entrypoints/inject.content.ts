@@ -489,6 +489,128 @@ export default defineContentScript({
         this.dispatchCustomEvent('swRequest', request, callback);
       }
 
+      // Asset Operation Methods
+      requestAssetCreate(
+        account: string,
+        assetRequest: any,
+        callback: any,
+        displayMsg?: string,
+        rpc?: string
+      ): void {
+        console.log('🪙 Asset creation requested:', { account, assetRequest });
+        const request = {
+          type: 'asset_create',
+          username: account,
+          assetRequest,
+          display_msg: displayMsg || 'Create Universal Asset',
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
+      requestAssetTransfer(
+        account: string,
+        universalId: string,
+        toUser: string,
+        transferType: string,
+        callback: any,
+        options?: any,
+        rpc?: string
+      ): void {
+        console.log('🔄 Asset transfer requested:', { account, universalId, toUser, transferType });
+        const request = {
+          type: 'asset_transfer',
+          username: account,
+          universalId,
+          toUser,
+          transferType,
+          options,
+          display_msg: `Transfer asset to ${toUser}`,
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
+      requestAssetConversion(
+        account: string,
+        universalId: string,
+        fromGame: string,
+        toGame: string,
+        callback: any,
+        conversionOptions?: any,
+        displayMsg?: string,
+        rpc?: string
+      ): void {
+        console.log('🔄 Asset conversion requested:', { account, universalId, fromGame, toGame });
+        const request = {
+          type: 'asset_convert',
+          username: account,
+          universalId,
+          fromGame,
+          toGame,
+          conversionOptions,
+          display_msg: displayMsg || `Convert asset from ${fromGame} to ${toGame}`,
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
+      requestAssetUpdate(
+        account: string,
+        universalId: string,
+        updates: any,
+        callback: any,
+        displayMsg?: string,
+        rpc?: string
+      ): void {
+        console.log('📝 Asset update requested:', { account, universalId, updates });
+        const request = {
+          type: 'asset_update',
+          username: account,
+          universalId,
+          updates,
+          display_msg: displayMsg || 'Update asset properties',
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
+      requestAssetBurn(
+        account: string,
+        universalId: string,
+        callback: any,
+        burnReason?: string,
+        displayMsg?: string,
+        rpc?: string
+      ): void {
+        console.log('🔥 Asset burn requested:', { account, universalId, burnReason });
+        const request = {
+          type: 'asset_burn',
+          username: account,
+          universalId,
+          burnReason,
+          display_msg: displayMsg || 'Permanently destroy this asset',
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
+      requestAssetOwnershipVerification(
+        account: string,
+        universalId: string,
+        callback: any,
+        rpc?: string
+      ): void {
+        console.log('✅ Asset ownership verification requested:', { account, universalId });
+        const request = {
+          type: 'asset_verify_ownership',
+          username: account,
+          universalId,
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
     }
 
     // Create and expose the API

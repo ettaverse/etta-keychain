@@ -128,7 +128,7 @@ export class AssetOwnershipService {
       let ownershipProof;
       if (blockchainOwnership && asset.current_owner === username) {
         const history = await this.blockchainService.getAssetHistory(universalId);
-        const lastTransfer = history.find(tx => tx.operation_type === 'asset_transfer');
+        const lastTransfer = history.find(tx => tx.operation_type === 'transfer');
         
         if (lastTransfer) {
           ownershipProof = {
@@ -270,25 +270,25 @@ export class AssetOwnershipService {
       
       // Filter for ownership-related transactions
       const ownershipTransactions = transactions.filter(tx => 
-        tx.operation_type === 'asset_transfer' || tx.operation_type === 'asset_mint'
+        tx.operation_type === 'transfer' || tx.operation_type === 'mint'
       );
 
       // Build transfer history
       const transfers = ownershipTransactions
-        .filter(tx => tx.operation_type === 'asset_transfer')
+        .filter(tx => tx.operation_type === 'transfer')
         .map(tx => ({
           transaction_id: tx.transaction_id,
-          from_owner: tx.operation_data.from_user,
-          to_owner: tx.operation_data.to_user,
-          transfer_type: tx.operation_data.transfer_type || 'transfer',
+          from_owner: tx.operation_data?.from_user,
+          to_owner: tx.operation_data?.to_user,
+          transfer_type: tx.operation_data?.transfer_type || 'transfer',
           timestamp: tx.timestamp,
-          price: tx.operation_data.price,
-          game_context: tx.operation_data.game_context,
-          memo: tx.operation_data.memo
+          price: tx.operation_data?.price,
+          game_context: tx.operation_data?.game_context,
+          memo: tx.operation_data?.memo
         }));
 
       // Find creation transaction to get first owner
-      const creationTx = ownershipTransactions.find(tx => tx.operation_type === 'asset_mint');
+      const creationTx = ownershipTransactions.find(tx => tx.operation_type === 'mint');
       const firstOwner = creationTx ? asset.creator : asset.current_owner;
 
       return {
@@ -399,9 +399,9 @@ export class AssetOwnershipService {
 
       // Check for game-specific locks
       for (const [gameId, variant] of Object.entries(asset.variants)) {
-        if (variant.locked_until && new Date(variant.locked_until) > new Date()) {
+        if (variant.properties?.locked_until && new Date(variant.properties.locked_until) > new Date()) {
           restrictions.game_locked = true;
-          reasons.push(`Asset is locked in game ${gameId} until ${variant.locked_until}`);
+          reasons.push(`Asset is locked in game ${gameId} until ${variant.properties.locked_until}`);
         }
       }
 

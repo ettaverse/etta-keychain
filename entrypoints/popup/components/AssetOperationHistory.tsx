@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -314,8 +314,8 @@ export function AssetOperationHistory({
             </TabsList>
 
             <TabsContent value={selectedFilter} className="mt-4">
-              <ScrollArea className="h-64">
-                <div className="space-y-3">
+              {/* <ScrollArea className="h-64"> */}
+                <div className="space-y-3 h-64 overflow-y-auto">
                   {filteredOperations.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       No {selectedFilter === 'all' ? '' : selectedFilter} operations found
@@ -433,7 +433,7 @@ export function AssetOperationHistory({
                     ))
                   )}
                 </div>
-              </ScrollArea>
+              {/* </ScrollArea> */}
             </TabsContent>
           </Tabs>
         </CardContent>

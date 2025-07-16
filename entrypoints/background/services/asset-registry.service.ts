@@ -381,7 +381,34 @@ export class AssetRegistryService {
    * Gets asset statistics for a domain or game
    */
   async getAssetStatistics(domain?: string, gameId?: string): Promise<AssetStatistics> {
-    return await this.blockchainService.getAssetStatistics(domain, gameId);
+    const blockchainStats = await this.blockchainService.getAssetStatistics(domain, gameId);
+    
+    // Convert blockchain stats to full AssetStatistics interface
+    return {
+      total_assets: blockchainStats.total_assets,
+      total_domains: 0,
+      total_games: 0,
+      total_creators: blockchainStats.creator_count || 0,
+      
+      by_domain: {},
+      by_game: {},
+      by_rarity: blockchainStats.rarity_distribution || {},
+      by_element: {},
+      by_asset_type: {},
+      
+      assets_created_today: 0,
+      assets_transferred_today: 0,
+      total_transactions: 0,
+      
+      total_market_value: blockchainStats.total_value,
+      average_asset_value: undefined,
+      price_ranges: undefined,
+      
+      // Quality Metrics
+      average_essence_score: 0,
+      power_tier_distribution: {},
+      compatibility_coverage: 0
+    };
   }
 
   /**

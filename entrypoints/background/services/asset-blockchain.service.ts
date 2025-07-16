@@ -545,7 +545,7 @@ export class AssetBlockchainService extends SteemApiService {
             if (jsonData.universal_id === universalId) {
               transactions.push({
                 transaction_id: String(trxId),
-                operation_type: jsonData.operation_type,
+                operation_type: jsonData.operation_type.replace('asset_', '') as 'mint' | 'transfer' | 'convert' | 'update' | 'burn',
                 timestamp: jsonData.timestamp,
                 operation_data: jsonData.data,
                 success: true

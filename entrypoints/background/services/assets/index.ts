@@ -7,6 +7,10 @@
  */
 
 // Core asset services
+import { AssetCreationService } from './asset-creation.service';
+import { AssetOwnershipService } from './asset-ownership.service';
+import { AssetDiscoveryService } from './asset-discovery.service';
+
 export { AssetCreationService } from './asset-creation.service';
 export { AssetOwnershipService } from './asset-ownership.service';
 export { AssetDiscoveryService } from './asset-discovery.service';

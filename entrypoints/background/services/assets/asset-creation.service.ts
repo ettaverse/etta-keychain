@@ -11,7 +11,7 @@ import { AssetFactory } from '../../../../lib/assets/factories';
 import { 
   AssetCreationRequest, 
   UniversalAsset, 
-  AssetCreationResponse 
+  AssetConversionResponse 
 } from '../../../../lib/assets/types';
 import { validateAssetCreationRequest } from '../../../../lib/assets/schemas';
 import Logger from '../../../../src/utils/logger.utils';

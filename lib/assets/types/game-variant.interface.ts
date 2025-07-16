@@ -195,28 +195,7 @@ export interface PropertyTransformation {
   };
 }
 
-/**
- * Asset Conversion Request
- */
-export interface AssetConversionRequest {
-  universal_id: string;
-  from_game: string;
-  to_game: string;
-  owner: string;
-  
-  // Conversion Options
-  options?: {
-    accept_partial_conversion?: boolean; // Accept if some properties are lost
-    priority_properties?: string[];      // Properties to prioritize
-    custom_modifications?: Record<string, any>; // User-requested modifications
-  };
-  
-  // User Preferences
-  preferences?: {
-    conversion_speed: 'fastest' | 'balanced' | 'safest';
-    risk_tolerance: 'low' | 'medium' | 'high';
-  };
-}
+// AssetConversionRequest is now defined in cross-game.interface.ts to avoid duplication
 
 /**
  * Asset Conversion Result

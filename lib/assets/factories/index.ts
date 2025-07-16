@@ -6,6 +6,9 @@
  */
 
 // Factory classes
+import { AssetFactory } from './asset-factory';
+import { VariantFactory } from './variant-factory';
+
 export { AssetFactory } from './asset-factory';
 export { VariantFactory } from './variant-factory';
 

@@ -86,7 +86,7 @@ export interface UserAssetFilters extends AssetFilters {
   
   // Portfolio Organization
   group_by?: AssetGrouping;     // How to group results
-  include_variants?: string[];  // Specific game variants to include
+  include_variant_names?: string[];  // Specific game variants to include
   exclude_variants?: string[];  // Game variants to exclude
   
   // Activity Filters

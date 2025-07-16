@@ -62,59 +62,83 @@ const AssetMintTester: React.FC<AssetMintTesterProps> = ({
     setTestResults([]);
 
     try {
-      // Mock minting request that would be sent to extension
-      const mockMintingRequest: MintingRequest = {
-        assets: selectedAssets,
-        options: {
-          domain: 'gaming',
-          asset_type: 'universal',
-          tradeable: true,
-          transferable: true,
-          burnable: false,
-          mintable: false,
-          total_supply: 1,
-          royalty_percentage: 0,
-          royalty_recipient: username,
-          custom_tags: ['test', 'via-extension']
-        }
-      };
+      // Check if extension is available
+      if (!window.steem_keychain || !window.steem_keychain.requestAssetCreate) {
+        throw new Error('Etta Keychain extension not found or asset operations not supported');
+      }
 
       onResponse('Testing Extension Minting', {
-        message: 'Simulating minting request to Etta Keychain extension',
-        request: mockMintingRequest,
+        message: 'Sending real minting request to Etta Keychain extension',
         assets: selectedAssets.map(a => a.name)
       });
 
-      // Simulate extension API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Process each asset individually (real extension calls)
+      const results = [];
+      for (const asset of selectedAssets) {
+        const assetCreationRequest = {
+          base_metadata: {
+            name: asset.name,
+            description: asset.description,
+            image_url: asset.image_url
+          },
+          asset_type: 'universal',
+          domain: 'gaming',
+          initial_game_id: asset.source_platform,
+          core_essence: {
+            power_tier: 50,
+            rarity_class: 'common',
+            element: 'neutral'
+          },
+          initial_variant: {
+            properties: {
+              source_platform: asset.source_platform,
+              source_id: asset.source_id
+            }
+          }
+        };
 
-      // Mock successful response from extension
-      const mockResults = selectedAssets.map(asset => ({
-        asset: asset,
-        success: true,
-        universal_id: `extension_${asset.domain}_${asset.source_id}_${Date.now()}`,
-        transaction_id: `ext_tx_${Math.random().toString(36).substr(2, 9)}`,
-        block_number: Math.floor(Math.random() * 1000000) + 50000000,
-        mint_cost: '0.001 STEEM',
-        minted_via: 'extension_api'
-      }));
+        // Make real extension API call
+        const result = await new Promise((resolve, reject) => {
+          window.steem_keychain?.requestAssetCreate?.(
+            username,
+            assetCreationRequest,
+            (response) => {
+              if (response.success) {
+                resolve({
+                  asset: asset,
+                  success: true,
+                  universal_id: response.universal_id,
+                  transaction_id: response.transaction_id,
+                  mint_cost: '0.001 STEEM', // This would come from cost estimation
+                  minted_via: 'extension_api'
+                });
+              } else {
+                reject(new Error(response.error || 'Minting failed'));
+              }
+            },
+            `Create Universal Asset: ${asset.name}`
+          );
+        });
 
-      setTestResults(mockResults);
+        results.push(result);
+      }
+
+      setTestResults(results);
       setTestingStatus('success');
 
       onResponse('Extension Minting Test Complete', {
         success: true,
-        message: `Successfully tested minting ${selectedAssets.length} assets via extension`,
-        results: mockResults
+        message: `Successfully minted ${selectedAssets.length} assets via extension`,
+        results: results
       });
 
-      onMintComplete?.(mockResults);
+      onMintComplete?.(results);
 
     } catch (error) {
       setTestingStatus('error');
       onResponse('Extension Minting Test Failed', {
         success: false,
-        error: 'Failed to communicate with Etta Keychain extension',
+        error: (error as Error).message || 'Failed to communicate with Etta Keychain extension',
         details: error
       });
     }
@@ -126,20 +150,40 @@ const AssetMintTester: React.FC<AssetMintTesterProps> = ({
     });
 
     try {
-      // In a real implementation, this would check for the extension
-      // For now, we'll simulate a successful connection
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Check if base keychain is available
+      if (!window.steem_keychain) {
+        throw new Error('Etta Keychain extension not detected');
+      }
+
+      // Check if asset operations are supported
+      const assetSupported = !!(window.steem_keychain.requestAssetCreate);
+      
+      // Test basic handshake
+      const handshakeResult = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Handshake timeout')), 5000);
+        
+        window.steem_keychain?.requestHandshake?.((response) => {
+          clearTimeout(timeout);
+          if (response.success) {
+            resolve(response);
+          } else {
+            reject(new Error(response.error || 'Handshake failed'));
+          }
+        });
+      });
 
       onResponse('Extension Connection Test', {
         success: true,
         message: 'Etta Keychain extension is available and ready',
-        extension_version: '1.0.0-beta',
-        api_version: '1.0'
+        extension_version: window.steem_keychain.version || '1.0.0',
+        api_version: '1.0',
+        asset_operations_supported: assetSupported,
+        handshake_result: handshakeResult
       });
     } catch (error) {
       onResponse('Extension Connection Failed', {
         success: false,
-        error: 'Could not connect to Etta Keychain extension',
+        error: (error as Error).message || 'Could not connect to Etta Keychain extension',
         details: error
       });
     }
