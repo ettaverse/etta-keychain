@@ -80,7 +80,3 @@ The project is in early development with:
 - Crypto utilities implemented with @noble libraries
 - No linting tools configured yet
 - Minimal functionality implemented
-
-## Important Reminders
-
-- Do not use 🤖 Generated with [Claude Code] or Co-Authored-By: Claude
