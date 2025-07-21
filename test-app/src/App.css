@@ -412,6 +412,11 @@
   font-size: 0.8rem;
   overflow-x: auto;
   margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Instructions Styles */
