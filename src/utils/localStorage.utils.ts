@@ -1,4 +1,4 @@
-import { storage } from "#imports";
+import { storage } from "@wxt-dev/storage";
 
 import { LocalStorageKeyEnum } from "../reference-data/local-storage-key.enum";
 

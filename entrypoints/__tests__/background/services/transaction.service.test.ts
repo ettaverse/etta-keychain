@@ -65,6 +65,12 @@ describe('TransactionService', () => {
     trx_num: 1,
   };
 
+  const mockDynamicGlobalProps = {
+    head_block_number: 12345,
+    head_block_id: '00003039f7b7c5d8b8b8b8b8',
+    time: '2024-01-01T12:00:00',
+  } as any;
+
   beforeEach(() => {
     vi.clearAllMocks();
     
@@ -75,6 +81,7 @@ describe('TransactionService', () => {
     // Setup default mocks
     vi.mocked(mockSteemApi.getHeadBlockNumber).mockResolvedValue(12345);
     vi.mocked(mockSteemApi.getRefBlockHeader).mockResolvedValue(mockRefBlockData);
+    vi.mocked(mockSteemApi.getDynamicGlobalProperties).mockResolvedValue(mockDynamicGlobalProps);
     vi.mocked(mockSteemApi.broadcastTransaction).mockResolvedValue(mockBroadcastResult);
     vi.mocked(MkUtils.isMK).mockReturnValue(false);
     
@@ -114,8 +121,7 @@ describe('TransactionService', () => {
         result: mockBroadcastResult,
         transaction: expect.any(Object),
       });
-      expect(mockSteemApi.getHeadBlockNumber).toHaveBeenCalled();
-      expect(mockSteemApi.getRefBlockHeader).toHaveBeenCalledWith(12345);
+      expect(mockSteemApi.getDynamicGlobalProperties).toHaveBeenCalled();
       expect(mockSteemApi.broadcastTransaction).toHaveBeenCalled();
     });
 
@@ -176,8 +182,7 @@ describe('TransactionService', () => {
       const result = await service.sendOperation(operations, mockKey, true);
 
       expect(result?.success).toBe(true);
-      expect(mockSteemApi.getHeadBlockNumber).toHaveBeenCalled();
-      expect(mockSteemApi.getRefBlockHeader).toHaveBeenCalled();
+      expect(mockSteemApi.getDynamicGlobalProperties).toHaveBeenCalled();
       expect(SteemTxUtils.getTransaction).toHaveBeenCalledWith('test-tx-id-123');
     });
 
@@ -200,7 +205,7 @@ describe('TransactionService', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      vi.mocked(mockSteemApi.broadcastTransaction).mockRejectedValue(new Error('Network error'));
+      vi.mocked(mockSteemApi.getDynamicGlobalProperties).mockRejectedValue(new Error('Network error'));
 
       const operations: Operation[] = [
         ['vote', {

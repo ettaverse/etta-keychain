@@ -1,10 +1,26 @@
-import AccountUtils from './account.utils';
-import { isPasswordValid } from './password.utils';
-import { LocalStorageKeyEnum } from '../../../src/reference-data/local-storage-key.enum';
-import LocalStorageUtils from '../../../src/utils/localStorage.utils';
+// import AccountUtils from "./account.utils";
+import { isPasswordValid } from "./password.utils";
+import { LocalStorageKeyEnum } from "../../../src/reference-data/local-storage-key.enum";
+import LocalStorageUtils from "../../../src/utils/localStorage.utils";
+import { LocalAccount } from "@/src/interfaces";
+import EncryptUtils from "./encrypt.utils";
 
-const login = async (password: string): Promise<boolean> => {
-  let accounts = await AccountUtils.getAccountsFromLocalStorage(password);
+const getAccountsFromLocalStorage = async (
+  mk: string,
+): Promise<LocalAccount[]> => {
+  const encryptedAccounts = await LocalStorageUtils.getValueFromLocalStorage(
+    LocalStorageKeyEnum.ACCOUNTS,
+  );
+  if (!encryptedAccounts) return [];
+
+  const accounts = EncryptUtils.decryptToJson(encryptedAccounts, mk);
+  return accounts?.list.filter(
+    (e: LocalAccount) => e.name.length,
+  ) as LocalAccount[];
+};
+
+const login = async (password: string): Promise<any> => {
+  let accounts = await getAccountsFromLocalStorage(password);
   return accounts ? true : false;
 };
 
@@ -20,7 +36,7 @@ const saveMkInLocalStorage = (mk: string): void => {
 
 const isMK = (value: string): boolean => {
   // Check if the value is a master key (encrypted format)
-  return value.startsWith('MK#');
+  return value.startsWith("MK#");
 };
 
 const getDecrypted = (encryptedMk: string): string => {

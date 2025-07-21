@@ -611,6 +611,26 @@ export default defineContentScript({
         this.dispatchCustomEvent('swRequest', request, callback);
       }
 
+      // Generic asset operation method for blockchain queries
+      requestAssetOperation(
+        account: string,
+        operationType: string,
+        operationData: any,
+        callback: any,
+        displayMsg?: string,
+        rpc?: string
+      ): void {
+        console.log('🔍 Asset operation requested:', { account, operationType, operationData });
+        const request = {
+          type: operationType,
+          username: account,
+          ...operationData,
+          display_msg: displayMsg || `Execute ${operationType}`,
+          rpc
+        };
+        this.dispatchCustomEvent('swRequest', request, callback);
+      }
+
     }
 
     // Create and expose the API

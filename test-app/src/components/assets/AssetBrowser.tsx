@@ -154,9 +154,9 @@ const AssetBrowser: React.FC<AssetBrowserProps> = ({ username, onResponse, onAss
   };
 
   // Get unique values for filter options
-  const getDomains = () => [...new Set(assets.map(asset => asset.domain))];
-  const getAssetTypes = () => [...new Set(assets.map(asset => asset.asset_type))];
-  const getSourcePlatforms = () => [...new Set(assets.map(asset => asset.source_platform))];
+  const getDomains = () => Array.from(new Set(assets.map(asset => asset.domain)));
+  const getAssetTypes = () => Array.from(new Set(assets.map(asset => asset.asset_type)));
+  const getSourcePlatforms = () => Array.from(new Set(assets.map(asset => asset.source_platform)));
 
   return (
     <div className={styles['asset-browser']}>

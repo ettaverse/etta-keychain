@@ -65,7 +65,9 @@ export function TokenAuthDialog({
 
   const generateAuthToken = () => {
     // Generate a secure random token for this session
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    const tokenBytes = new Uint8Array(32);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes)
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     setAuthToken(token);

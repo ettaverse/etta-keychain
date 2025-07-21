@@ -1,18 +1,24 @@
-import { Operation, Transaction } from '@steempro/dsteem';
-import { PrivateKey, Transaction as SteemTransaction } from '@steempro/steem-tx-js';
-import { Key, TransactionOptions } from '../../../src/interfaces/keys.interface';
-import { TransactionResult } from '../../../src/interfaces/steem-tx.interface';
-import { SteemApiService } from './steem-api.service';
-import { KeyManagementService } from './key-management.service';
-import Logger from '../../../src/utils/logger.utils';
-import MkUtils from '../utils/mk.utils';
+import { Operation, Transaction } from "@steempro/dsteem";
+import {
+  PrivateKey,
+  Transaction as SteemTransaction,
+} from "@steempro/steem-tx-js";
+import {
+  Key,
+  TransactionOptions,
+} from "../../../src/interfaces/keys.interface";
+import { TransactionResult } from "../../../src/interfaces/steem-tx.interface";
+import { SteemApiService } from "./steem-api.service";
+import { KeyManagementService } from "./key-management.service";
+import Logger from "../../../src/utils/logger.utils";
+import MkUtils from "../utils/mk.utils";
 
 const MINUTE = 60;
 
 export class TransactionService {
   constructor(
     private steemApi: SteemApiService,
-    private keyManager: KeyManagementService
+    private keyManager: KeyManagementService,
   ) {}
 
   /**
@@ -22,30 +28,52 @@ export class TransactionService {
     operations: Operation[],
     key: Key,
     confirmation?: boolean,
-    options?: TransactionOptions
+    options?: TransactionOptions,
   ): Promise<TransactionResult | null> {
     try {
       // Process operations - convert expiration if needed
       operations.forEach((operation) => {
         const expiration = operation[1]?.expiration;
-        if (expiration && typeof expiration === 'number') {
+        if (expiration && typeof expiration === "number") {
           operation[1].expiration = new Date(expiration * 1000)
             .toISOString()
-            .split('.')[0];
+            .split(".")[0];
         }
       });
 
       // Get reference block data
-      const headBlockNumber = await this.steemApi.getHeadBlockNumber();
-      const refBlockData = await this.steemApi.getRefBlockHeader(headBlockNumber);
+      const dynamicGlobalProps =
+        await this.steemApi.getDynamicGlobalProperties();
+      const headBlockNumber = dynamicGlobalProps.head_block_number;
+      const headBlockId = dynamicGlobalProps.head_block_id;
+
+      Logger.log("🔗 Dynamic global properties for TaPoS:", {
+        headBlockNumber,
+        headBlockId,
+        hasHeadBlockNumber: !!headBlockNumber,
+        hasHeadBlockId: !!headBlockId,
+      });
+
+      const refBlockData = await this.steemApi.getRefBlockData(
+        headBlockNumber,
+        headBlockId,
+      );
 
       // Create transaction
       const expireTime = options?.expire || 1 * MINUTE;
+      const expirationDate = new Date(Date.now() + expireTime * 1000);
+      const expiration = expirationDate.toISOString().split(".")[0]; // Remove milliseconds
+
+      Logger.log("📅 Transaction expiration:", {
+        expireTime,
+        expirationDate: expirationDate.toISOString(),
+        expiration,
+        now: new Date().toISOString(),
+      });
+
       const tx = new SteemTransaction({
         ...refBlockData,
-        expiration: new Date(Date.now() + expireTime * 1000)
-          .toISOString()
-          .split('.')[0],
+        expiration,
         operations,
         extensions: [],
       });
@@ -62,7 +90,39 @@ export class TransactionService {
 
       // Broadcast transaction
       const txObject = tx as any;
-      const result = await this.steemApi.broadcastTransaction(txObject as any);
+      let result;
+
+      try {
+        result = await this.steemApi.broadcastTransaction(txObject as any);
+      } catch (error) {
+        Logger.error("❌ Blockchain transaction failed:", error);
+
+        // Check if this is a blockchain-specific error
+        if (
+          error instanceof Error &&
+          error.message.includes("Blockchain error")
+        ) {
+          throw new Error(
+            `Transaction rejected by blockchain: ${error.message}`,
+          );
+        }
+
+        // Re-throw other errors
+        throw error;
+      }
+
+      // Validate that we got a proper transaction ID
+      if (!result || !result.id) {
+        throw new Error(
+          "Transaction broadcast failed - no transaction ID returned",
+        );
+      }
+
+      Logger.log("Transaction broadcast successful:", {
+        transactionId: result.id,
+        blockNumber: result.block_num,
+        operations: operations.length,
+      });
 
       if (confirmation && result) {
         // Wait for confirmation if requested
@@ -75,10 +135,10 @@ export class TransactionService {
         transaction: txObject,
       };
     } catch (error) {
-      Logger.error('Transaction failed', error);
+      // Logger.error("Transaction failed", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         transaction: null,
       };
     }
@@ -92,13 +152,13 @@ export class TransactionService {
     json: any,
     account: string,
     key: Key,
-    displayName?: string
+    displayName?: string,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'custom_json',
+      "custom_json",
       {
-        required_auths: key.type === 'active' ? [account] : [],
-        required_posting_auths: key.type === 'posting' ? [account] : [],
+        required_auths: key.type === "active" ? [account] : [],
+        required_posting_auths: key.type === "posting" ? [account] : [],
         id,
         json: JSON.stringify(json),
       },
@@ -116,10 +176,10 @@ export class TransactionService {
     amount: string,
     memo: string,
     key: Key,
-    currency: string = 'STEEM'
+    currency: string = "STEEM",
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'transfer',
+      "transfer",
       {
         from,
         to,
@@ -139,10 +199,10 @@ export class TransactionService {
     author: string,
     permlink: string,
     weight: number,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'vote',
+      "vote",
       {
         voter,
         author,
@@ -161,10 +221,10 @@ export class TransactionService {
     delegator: string,
     delegatee: string,
     vestingShares: string,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'delegate_vesting_shares',
+      "delegate_vesting_shares",
       {
         delegator,
         delegatee,
@@ -182,10 +242,10 @@ export class TransactionService {
     from: string,
     to: string,
     amount: string,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'transfer_to_vesting',
+      "transfer_to_vesting",
       {
         from,
         to,
@@ -202,10 +262,10 @@ export class TransactionService {
   async withdrawVesting(
     account: string,
     vestingShares: string,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'withdraw_vesting',
+      "withdraw_vesting",
       {
         account,
         vesting_shares: vestingShares,
@@ -218,29 +278,38 @@ export class TransactionService {
   /**
    * Wait for transaction confirmation
    */
-  private async waitForConfirmation(txId: string, maxRetries: number = 10): Promise<boolean> {
+  private async waitForConfirmation(
+    txId: string,
+    maxRetries: number = 10,
+  ): Promise<boolean> {
     Logger.log(`Waiting for transaction confirmation: ${txId}`);
-    
+
     for (let i = 0; i < maxRetries; i++) {
       try {
         // Wait 3 seconds between checks
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
         // Try to get the transaction from the blockchain
         const transaction = await this.getTransactionStatus(txId);
-        
+
         if (transaction) {
-          Logger.log(`Transaction ${txId} confirmed in block ${transaction.block_num}`);
+          Logger.log(
+            `Transaction ${txId} confirmed in block ${transaction.block_num}`,
+          );
           return true;
         }
-        
-        Logger.log(`Transaction ${txId} not yet confirmed, attempt ${i + 1}/${maxRetries}`);
+
+        Logger.log(
+          `Transaction ${txId} not yet confirmed, attempt ${i + 1}/${maxRetries}`,
+        );
       } catch (error) {
         Logger.warn(`Confirmation check ${i + 1}/${maxRetries} failed`, error);
       }
     }
-    
-    Logger.warn(`Transaction ${txId} could not be confirmed after ${maxRetries} attempts`);
+
+    Logger.warn(
+      `Transaction ${txId} could not be confirmed after ${maxRetries} attempts`,
+    );
     return false;
   }
 
@@ -250,7 +319,7 @@ export class TransactionService {
   async getTransactionStatus(txId: string): Promise<any | null> {
     try {
       // Use steem-tx-js utility for getting transaction
-      const { SteemTxUtils } = await import('../utils/steem-tx.utils');
+      const { SteemTxUtils } = await import("../utils/steem-tx.utils");
       const transaction = await SteemTxUtils.getTransaction(txId);
       return transaction;
     } catch (error) {
@@ -270,18 +339,18 @@ export class TransactionService {
     timestamp?: string;
   }> {
     const transaction = await this.getTransactionStatus(txId);
-    
+
     if (transaction) {
       return {
         confirmed: true,
         transaction,
         block_num: transaction.block_num,
-        timestamp: transaction.timestamp
+        timestamp: transaction.timestamp,
       };
     }
-    
+
     return {
-      confirmed: false
+      confirmed: false,
     };
   }
 
@@ -297,10 +366,10 @@ export class TransactionService {
     memoKey: string,
     jsonMetadata: string,
     fee: string,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'account_create',
+      "account_create",
       {
         fee,
         creator,
@@ -326,10 +395,10 @@ export class TransactionService {
     active?: any,
     posting?: any,
     memoKey?: string,
-    jsonMetadata?: string
+    jsonMetadata?: string,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'account_update',
+      "account_update",
       {
         account,
         owner,
@@ -350,10 +419,10 @@ export class TransactionService {
     account: string,
     witness: string,
     approve: boolean,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'account_witness_vote',
+      "account_witness_vote",
       {
         account,
         witness,
@@ -370,10 +439,10 @@ export class TransactionService {
   async setWitnessProxy(
     account: string,
     proxy: string,
-    key: Key
+    key: Key,
   ): Promise<TransactionResult | null> {
     const operation: Operation = [
-      'account_witness_proxy',
+      "account_witness_proxy",
       {
         account,
         proxy,

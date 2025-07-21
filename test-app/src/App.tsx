@@ -7,6 +7,7 @@ import AssetBrowser from './components/assets/AssetBrowser';
 import PortfolioDashboard from './components/portfolio/PortfolioDashboard';
 import AssetMintTester from './components/operations/AssetMintTester';
 import AssetTransferTester from './components/operations/AssetTransferTester';
+import BlockchainExplorer from './components/blockchain/BlockchainExplorer';
 
 interface ResponseItem {
   operation: string;
@@ -21,7 +22,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState('');
   const [responses, setResponses] = useState<ResponseItem[]>([]);
   const [extensionDetected, setExtensionDetected] = useState(false);
-  const [activeTab, setActiveTab] = useState<'browser' | 'portfolio' | 'mint' | 'transfer'>('browser');
+  const [activeTab, setActiveTab] = useState<'browser' | 'portfolio' | 'mint' | 'transfer' | 'blockchain'>('browser');
   const [selectedAssets, setSelectedAssets] = useState<any[]>([]);
   const [selectedPortfolioAssets, setSelectedPortfolioAssets] = useState<any[]>([]);
 
@@ -203,6 +204,12 @@ function App() {
                   >
                     📤 Transfer Tester
                   </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'blockchain' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('blockchain')}
+                  >
+                    🔍 Blockchain Explorer
+                  </button>
                 </div>
               </section>
 
@@ -245,6 +252,13 @@ function App() {
                     onTransferComplete={handleTransferComplete}
                   />
                 )}
+
+                {activeTab === 'blockchain' && (
+                  <BlockchainExplorer
+                    username={currentUser}
+                    onResponse={handleResponse}
+                  />
+                )}
               </section>
               
               <section className="testing-section">
@@ -272,6 +286,7 @@ function App() {
               <li><strong>📊 Portfolio:</strong> View your complete asset portfolio with filtering and management tools</li>
               <li><strong>🪙 Mint Tester:</strong> Test minting operations on selected assets via extension</li>
               <li><strong>📤 Transfer Tester:</strong> Test asset transfers (gift, sale, trade, conversion) via extension</li>
+              <li><strong>🔍 Blockchain Explorer:</strong> Query and analyze all custom_json operations on the STEEM blockchain</li>
               <li><strong>⚙️ Transaction Testing:</strong> Use the transaction buttons to test various keychain operations</li>
               <li>Monitor responses in the display area below</li>
               <li>Check browser console for additional debugging information</li>
@@ -285,6 +300,7 @@ function App() {
                 <li>✅ <strong>Portfolio Management:</strong> View, filter, and manage all your assets</li>
                 <li>✅ <strong>Minting Operations:</strong> Test converting Web2 assets to blockchain tokens</li>
                 <li>✅ <strong>Transfer Operations:</strong> Test all types of asset transfers and sales</li>
+                <li>✅ <strong>Blockchain Explorer:</strong> Query and analyze all asset operations on the blockchain</li>
                 <li>✅ <strong>Cross-Platform Integration:</strong> Unified experience across gaming and domain platforms</li>
                 <li>✅ <strong>Extension Testing:</strong> Validate browser extension communication and security</li>
               </ul>

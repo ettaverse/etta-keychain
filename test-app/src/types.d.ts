@@ -39,6 +39,15 @@ declare global {
         displayMsg?: string,
         rpc?: string
       ) => void;
+      // Generic asset operation method for blockchain queries
+      requestAssetOperation?: (
+        account: string,
+        operationType: string,
+        operationData: any,
+        callback: (response: any) => void,
+        displayMsg?: string,
+        rpc?: string
+      ) => void;
     };
   }
 }
