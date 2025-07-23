@@ -151,6 +151,17 @@ function App() {
     setTimeout(() => setActiveTab('portfolio'), 2000);
   };
 
+  const getTabDescription = (tab: string) => {
+    const descriptions = {
+      'browser': 'Discover and select Web2 assets from gaming platforms and domains ready for blockchain minting. Browse assets, apply filters, and select items for minting operations.',
+      'portfolio': 'View and manage your complete asset portfolio. See minted/unminted assets, portfolio value, recent activity, and perform batch operations on your assets.',
+      'mint': 'Test minting operations via the Etta Keychain extension. Convert selected Web2 assets into blockchain tokens with real extension integration.',
+      'transfer': 'Test asset transfer operations through the extension. Transfer assets via Gift, Sale, Trade, or Conversion with comprehensive testing of all transfer types.',
+      'blockchain': 'Query and analyze custom_json operations on the STEEM blockchain. Search by account, block, or date range with export capabilities for data analysis.'
+    };
+    return descriptions[tab as keyof typeof descriptions] || '';
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -210,6 +221,13 @@ function App() {
                   >
                     🔍 Blockchain Explorer
                   </button>
+                </div>
+              </section>
+
+              {/* Tab Description */}
+              <section className="tab-description">
+                <div className="tab-description-content">
+                  <p>{getTabDescription(activeTab)}</p>
                 </div>
               </section>
 

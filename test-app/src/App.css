@@ -536,6 +536,27 @@
   background: #f8faff;
 }
 
+/* Tab Description Styles */
+.tab-description {
+  background: #f8faff;
+  border: 1px solid #e1e8ff;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.1);
+}
+
+.tab-description-content {
+  padding: 1rem 1.5rem;
+}
+
+.tab-description-content p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
 /* Tab Content Styles */
 .tab-content {
   background: white;
@@ -553,6 +574,14 @@
   
   .App-header h1 {
     font-size: 2rem;
+  }
+  
+  .tab-description-content {
+    padding: 0.75rem 1rem;
+  }
+  
+  .tab-description-content p {
+    font-size: 0.9rem;
   }
   
   .input-group {
